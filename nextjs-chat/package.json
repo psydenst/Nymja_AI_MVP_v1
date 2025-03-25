@@ -1,0 +1,27 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start"
+  },
+  "dependencies": {
+    "20": "^1.0.0",
+    "bootstrap": "^5.3.3",
+    "jwt-decode": "^4.0.0",
+    "next": "latest",
+    "node": "^23.1.0",
+    "react": "18.2.0",
+    "react-bootstrap": "^2.10.4",
+    "react-dom": "18.2.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/jwt-decode": "3.1.0",
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "typescript": "^5.7.2"
+  }
+}

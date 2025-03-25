@@ -1,0 +1,7 @@
+POSTGRES_DB="dev_db"
+POSTGRES_USER="user"
+POSTGRES_PASSWORD="password"
+POSTGRES_HOST="db"
+POSTGRES_PORT="5432"
+SECRET_KEY='django-insecure-&a)z&5_pkttgv0wt6!-ymrsrfb99wac%$0u0$z1r5g1_@_1dil'
+CRYPTO_KEY='jFtioIZsdkbjyB-X4fOUN_4WIMGHhP-WwY8J40vj3nA='

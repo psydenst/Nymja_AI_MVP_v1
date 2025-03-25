@@ -1,0 +1,80 @@
+.page {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #cccccc, #1e1e2f);
+    font-family: Arial, sans-serif;
+  }
+  
+  .title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #ffffff;
+    text-align: center;
+  }
+
+  .loginBox {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    width: 356px;
+    padding: 20px;
+    text-align: center;
+    color: #ffffff;
+  }
+  
+  
+  .inputField {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: none;
+    border-radius: 5px;
+    background: rgba(71, 71, 71, 0.2);
+    color: #fff;
+    font-size: 16px;
+  }
+  
+  .inputField::placeholder {
+    color: #b3b3c3;
+  }
+  
+  .loginButton {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: #373738;
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  
+  .loginButton:hover {
+    background: #323138;
+  }
+  
+  .forgotPassword {
+    color: #e5e5e5;
+    text-decoration: none;
+    font-size: 14px;
+    margin: 5%;
+  }
+  
+  .forgotPassword:hover {
+    text-decoration: underline;
+  }
+  
+  @media (max-width: 768px) {
+    .loginBox {
+      width: 90%;
+    }
+  }
+  

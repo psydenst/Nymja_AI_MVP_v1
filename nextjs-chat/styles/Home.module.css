@@ -1,0 +1,350 @@
+.header_class {
+  background-color: rgba(50, 50, 50) !important;
+}
+
+.container
+{
+  height: 100vh;
+  width: 100vw;
+  background-color: rgba(50, 50, 50);
+  display: flex;
+}
+
+.cover_container
+{
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(217, 217, 217, 10%);
+  height: 90%;
+  width: 70vw;
+  border-radius: 1vw;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar
+{
+  background-color: rgba(	217, 217, 217, 10%);
+  height: 90%;
+  width: 18vw;
+  margin-right: 5vw;
+  border-radius: 1vw; 
+
+}
+
+.search_sidebar
+{
+  height: 5%;
+  width: 85%;
+	margin-top: 1vh;
+  margin-bottom: 1vh;
+  background-color: rgba(217, 217, 217, 10%);
+  opacity: 1;
+  border-radius: 0.5vhearc
+}
+
+.inner_sidebar
+{
+  height: 88%;
+  width: 85%;
+  background-color: rgba(217, 217, 217, 10%);
+  opacity: 1;
+  border-radius: 0.5vh;
+}
+
+.logout_button {
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.logout_button:hover
+{
+	opacity: 0.7;
+}
+
+.transparent_input 
+{
+	display: flex;
+  background-color: rgba(0,0,0,0);
+  border: none;
+  margin-left: 0.5vw;
+}
+
+.transparent_input:focus {
+  outline: none;
+  border-color: transparent; /* Removes border */
+  box-shadow: none; /* Removes any box shadow */
+}
+
+.transparent_input::placeholder {
+	  line-height: var(--input-height) !important;
+		display: flex;
+		align-items: center !important;
+}
+
+.transparent_input::-webkit-scrollbar {
+  width: 6px; /* Adjust width as needed */
+}
+
+.transparent_input::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.transparent_input::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.5); /* A semi-transparent white */
+  border-radius: 3px;
+}
+
+.search_input 
+{
+	display: flex;
+  background-color: rgba(0,0,0,0);
+  border: none;
+  margin-left: 0.5vw;
+	opacity: 1 !important;
+}
+
+.search_input:focus {
+  outline: none;
+  border-color: transparent; /* Removes border */
+  box-shadow: none; /* Removes any box shadow */
+}
+
+.search_input::placeholder {
+	  line-height: var(--input-height) !important;
+		display: flex;
+		align-items: center !important;
+}
+
+.search_input::-webkit-scrollbar {
+  width: 6px; /* Adjust width as needed */
+}
+
+.search_input::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.search_input::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.5); /* A semi-transparent white */
+  border-radius: 3px;
+}
+
+.chat_container
+{
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(217, 217, 217, 10%);
+  height: 80%;
+  width: 65vw;
+  border-radius: 1vw;
+  justify-content: space-between;
+  margin: 3%;
+  overflow: hidden;
+}
+
+/* For browsers supporting WebKit scrollbar styling */
+.chat_container::-webkit-scrollbar {
+  width: 6px; /* Adjust width as needed */
+}
+
+.chat_container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat_container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.5); /* A semi-transparent white */
+  border-radius: 3px;
+}
+
+/* For Firefox */
+.chat_container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+}
+
+.input_bar
+{
+	position: relative; 
+	height: 6%;
+  background-color: rgba(217, 217, 217, 10%);
+  width: 65vw;
+  display: flex;
+  align-items: center !important;
+  border-radius: 1vw;
+  margin: 0 5% 5%;
+}
+
+
+.to_white
+{
+  width: 30% !important;
+}
+
+.history {
+  overflow-y: auto;
+}
+
+.history::-webkit-scrollbar {
+  width: 5px;
+}
+
+.history::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.history::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 3px;
+}
+
+/* For FireFox */
+.history {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+}
+
+.list_elements {
+  background-color: transparent !important;
+}
+
+.activeConversation {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  opacity: 1;
+}
+
+@media (max-width: 600px)
+{
+  .grid {
+    width: 100%;
+    flex-direction: column;
+  }
+}
+
+
+/* Accordion icon container */
+.accordion {
+  position: absolute;
+  top: 1.2%;
+  left: 1.5%;
+  filter: invert(1); /* Inverts colors (black becomes white) */
+  z-index: 1000;
+  cursor: pointer;
+}
+
+/* Arrow image styles */
+.arrow {
+  width: 1vw;
+  height: auto;
+	width: 2vw;
+  min-width: 20px;
+  transform: rotate(0deg);
+  transition: transform 0.3s ease, filter 0.3s ease;
+	opacity: 0.8;
+}
+
+.arrow.open {
+  transform: rotate(90deg);
+}
+
+.arrow.open:hover {
+  transform: rotate(90deg) scale(1.3);
+	opacity: 0.6;
+}
+
+.arrow:hover {
+  transform: rotate(0deg) scale(1.3);
+	opacity: 0.6;
+}
+
+/* Logout panel (initially hidden) */
+.logout_panel {
+  position: absolute;
+  top: 5%;
+  left: 2%;
+  z-index: 1000;
+  background-color: #666;
+  padding: 10px;
+  border-radius: 5px;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* When the panel is active (visible) */
+.logout_panel.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Logout button styles */
+.logout_button {
+  background-color: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-family: fantasy; /* A "pretty" serif font; change as desired */
+  font-weight: bold;
+  font-size: clamp(12px, 1.2vw, 20px);
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.logout_button:hover {
+  opacity: 0.7;
+}
+
+.list_elements img {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* When hovering over the list element, reveal the delete icon */
+.list_elements:hover img {
+  opacity: 1;
+}
+
+.conversationName {
+  flex-grow: 1;
+  text-align: center;
+}
+
+.animatedDots {
+  display: inline-flex;
+}
+
+.animatedDots span {
+  opacity: 0.2;
+  animation: dotPulse 1.5s infinite;
+  animation-fill-mode: both;
+  font-size: inherit; /* inherit font-size from parent */
+}
+
+.animatedDots span:nth-child(1) {
+  animation-delay: 0s;
+}
+.animatedDots span:nth-child(2) {
+  animation-delay: 0.3s;
+}
+.animatedDots span:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes dotPulse {
+  0%, 20%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+.customPlaceholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;       /* vertically center */
+  justify-content: flex-start;   /* horizontally center */
+  pointer-events: none;      /* allow clicks to pass through */
+  color: #E5EAFF;
+	opacity: 0.65;
+	line-height: var(--input-height) !important;
+}

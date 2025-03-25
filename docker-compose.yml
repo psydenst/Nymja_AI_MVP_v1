@@ -1,0 +1,89 @@
+services:
+  backend:
+    build:
+      context: .  # The directory where the Dockerfile of the backend is located
+      dockerfile: ./backend/Dockerfile  
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app  # Synchronizes the host directory with the container
+    env_file:
+      - .env
+    environment:
+      - DEBUG=True
+      - DATABASE_HOST=${POSTGRES_HOST} # Host of the DB defined for the "db" service
+      - DATABASE_PORT=${POSTGRES_PORT}  # PostgreSQL port for Django to connect
+      - DATABASE_NAME=${POSTGRES_DB}  # Database name
+      - DATABASE_USER=${POSTGRES_USER}  # Database user
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}  # Database password
+    depends_on:
+      - db
+      - ollama
+    container_name: backend
+    networks:
+      - system
+
+  frontend:
+    build:
+      context: ./nextjs-chat/   # The directory where the Dockerfile of the frontend is located
+      dockerfile: ./Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - system
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    container_name: postgres
+    ports:
+      - "5432:5432"  # Port for communication with Django
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - system
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "4555:80"  # Port to access pgAdmin at localhost:4555
+    depends_on:
+      - db
+    links:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./backend/pgadmin-config/servers.json:/pgadmin4/servers.json  # Move this under pgadmin service
+    networks:
+      - system
+  
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: ./Dockerfile
+    container_name: ollama
+    entrypoint: /app/run_ollama.sh
+    ports:
+      - 11434:11434
+    pull_policy: always
+    tty: true
+    restart: always
+    networks:
+      - system
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  system:
+    driver: bridge
