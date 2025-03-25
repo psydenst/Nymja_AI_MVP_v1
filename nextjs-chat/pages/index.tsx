@@ -46,9 +46,9 @@ export default function Home() {
       try {
         const validToken = await getValidAccessToken();
         setAccessToken(validToken);
-        console.log("Valid token retrieved:", validToken);
+       // console.log("Valid token retrieved:", validToken);
       } catch (error) {
-        console.error("Unable to retrieve tokens", error);
+       // console.error("Unable to retrieve tokens", error);
         router.push('/login');
       }
     }
@@ -84,7 +84,7 @@ export default function Home() {
 					setConversations(data);
 					localStorage.setItem('conversations', JSON.stringify(data));
 				}
-				console.log("Fetched conversations:", data);
+			//	console.log("Fetched conversations:", data);
 			} catch (error) {
 				console.error("Error fetching conversations:", error);
 			}
@@ -112,7 +112,7 @@ export default function Home() {
       if (!selectedConversation.messages || selectedConversation.messages.length === 0) {
         try {
           const fullConversation = await fetchFullConversation(selectedConversation.id, accessToken);
-          console.log('Fetched conversation history:', fullConversation);
+        //  console.log('Fetched conversation history:', fullConversation);
           updateConversation(selectedConversation.id, fullConversation);
         } catch (error) {
           console.error("Error fetching conversation history:", error);
@@ -203,7 +203,7 @@ export default function Home() {
 		
 			// Assume the returned data includes the user's message ID.
 			const userMessageData = await response.json();
-			console.log('User message sent successfully:', userMessageData);
+			// console.log('User message sent successfully:', userMessageData);
 		
 			// Update state: add the user's message.
 			setConversations((prevConversations) =>
@@ -241,7 +241,7 @@ export default function Home() {
 			// Call the bot response endpoint using the user's message ID.
 			const token = localStorage.getItem('accessToken');
 			const botResponseData = await getBotResponse(userMessageData.id, token);
-			console.log("Bot response received:", botResponseData);
+		// 	console.log("Bot response received:", botResponseData);
 		
 			// Update state: replace the pending bot message with the actual bot response.
 			setConversations((prevConversations) =>
@@ -300,7 +300,7 @@ export default function Home() {
 
 			const result = await response.json();
 			localStorage.setItem('conversationId', result.id);
-			console.log('Conversation saved:', result);
+			// console.log('Conversation saved:', result);
 			
 			// Prepend the new conversation (returned from the backend) to the list.
 			setConversations((prevConversations) => [result, ...prevConversations]);

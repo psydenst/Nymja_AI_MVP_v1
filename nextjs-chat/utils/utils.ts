@@ -26,7 +26,7 @@ export async function listConversations(userToken: string | null): Promise<any[]
       },
       credentials: 'include',
     });
-    console.log('DEBUG: ', userToken);
+    // console.log('DEBUG: ', userToken);
 
 
     if (response.status === 204) {
@@ -39,7 +39,7 @@ export async function listConversations(userToken: string | null): Promise<any[]
     }
 
     const result = await response.json();
-    console.log('Fetched conversations:', result);
+   // console.log('Fetched conversations:', result);
     return result;
   } catch (error) {
     console.error('Error fetching conversations from backend:', error);
@@ -52,7 +52,7 @@ export function storeConversationIds(conversations: any[]): void {
   if (typeof window !== 'undefined') {
     const conversationIds = conversations.map((conversation) => conversation.id);
     localStorage.setItem('conversationIds', JSON.stringify(conversationIds));
-    console.log('Stored conversation IDs:', conversationIds);
+    // console.log('Stored conversation IDs:', conversationIds);
   }
 }
 
@@ -89,7 +89,7 @@ export async function fetchFullConversation(
     }
 
     const result = await response.json();
-    console.log('Fetched full conversation:', result);
+   // console.log('Fetched full conversation:', result);
     // Assuming the API returns an array of messages, wrap it with the conversation id.
     return { id: conversationId, messages: result };
   } catch (error) {
@@ -132,7 +132,7 @@ export async function refreshAccessToken(): Promise<string> {
 
   const data = await response.json();
   localStorage.setItem("accessToken", data.access);
-  console.log("Access token refreshed:", data.access);
+  // console.log("Access token refreshed:", data.access);
   return data.access;
 }
 
@@ -234,7 +234,7 @@ export async function getBotResponse(
     }
 
     const result = await response.json();
-    console.log("Fetched bot response:", result);
+    // console.log("Fetched bot response:", result);
     return result; // Expected to include the bot's response text (e.g. result.text)
   } catch (error) {
     console.error("Error fetching bot response:", error);
@@ -276,7 +276,7 @@ export async function saveMessage(
     }
 
     const result = await response.json();
-    console.log("Saved message:", result);
+   //  console.log("Saved message:", result);
     return result;
   } catch (error) {
     console.error("Error saving message:", error);
@@ -294,7 +294,7 @@ export function logoutUser(): void {
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("conversationId");
   localStorage.removeItem("conversations");
-  console.log("User logged out.");
+ // console.log("User logged out.");
 }
 
 // Create a default conversation if user has no conversations yet. 
@@ -321,7 +321,7 @@ export async function createDefaultConversation(userToken: string | null): Promi
     }
 
     const result = await response.json();
-    console.log("Default conversation created:", result);
+   // console.log("Default conversation created:", result);
     return result;
   } catch (error) {
     console.error("Error creating default conversation:", error);
@@ -350,7 +350,7 @@ export async function deleteConversation(
     );
     
     if (response.status === 204) {
-      console.log("Conversation deleted successfully");
+      //console.log("Conversation deleted successfully");
       return true;
     } else {
       const errorData = await response.json();

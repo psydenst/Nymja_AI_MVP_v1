@@ -46,7 +46,7 @@ export default function Login() {
       const result = await res.json();
       // Handle successful login
       // For example, save the token and redirect
-      console.log('Login successful:', result);
+      // console.log('Login successful:', result);
 
       // Store the token if necessary
       localStorage.setItem('accessToken', result.access_token);
