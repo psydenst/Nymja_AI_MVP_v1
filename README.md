@@ -4,7 +4,7 @@ This is the first deliverable of the Nymja.ai project, which aims to create an a
 
 Thus, this MVP runs on the Llama 3.2 1B model, using Python Django for the backend, Next.js for the frontend, and PostgreSQL as the database. You can run it locally by following the instructions below, being orchestrated by Docker.
 
-To find out more about the project, visit the [Nym forum](YOUR_FORUM_LINK_HERE).
+To find out more about the project, visit the [Nym forum](https://forum.nym.com/t/report-on-nymja-ai-alpha-version-release/1191).
 
 ## Installation and Running Instructions
 
