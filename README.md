@@ -2,7 +2,7 @@
 
 This is the first deliverable of the Nymja.ai project, which aims to create an app that concentrates open-source LLMs under a privacy-focused architecture.
 
-Thus, this MVP runs on the Llama 3.2 1B model, using Python Django for the backend, Next.js for the frontend, and PostgreSQL as the database. You can run it locally by following the instructions below.
+Thus, this MVP runs on the Llama 3.2 1B model, using Python Django for the backend, Next.js for the frontend, and PostgreSQL as the database. You can run it locally by following the instructions below, being orchestrated by Docker.
 
 To find out more about the project, visit the [Nym forum](YOUR_FORUM_LINK_HERE).
 
