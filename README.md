@@ -208,7 +208,7 @@ This project is containerized using Docker, simplifying the setup process. Pleas
       
 ### Troubleshooting
 
-* If you encounter issues with the build process, ensure that you have sufficient disk space and that your Docker environment is properly configured.
+* If you encounter issues with the build process, ensure that you have sufficient disk space (+/- 7gb) and that your Docker environment is properly configured.
 * If the application is not accessible at `http://localhost:3000`, check the Docker logs for any error messages:
 
     ```bash
