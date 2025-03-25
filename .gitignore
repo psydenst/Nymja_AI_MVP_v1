@@ -6,3 +6,5 @@ __pycache__/
 keygenerator.py
 secret.key
 .env
+.DS_Store
+.dockerignore

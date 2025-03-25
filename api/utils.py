@@ -22,7 +22,7 @@ def getBotResponse(user_message, conversation_id):
         history += f"{msg.sender}: {text}\n"
     
     # Append the current user question
-    context = f"Answer the question below. Here is the conversation history:\n{history}\nQuestion: {user_message}\nAnswer: "
+    context = f"Answer this query: {user_message}. For context, here is the conversation history:\n{history}\n"
 
     payload = {
         "model": "llama3.2:1b",
