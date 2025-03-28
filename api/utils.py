@@ -11,7 +11,7 @@ def getBotResponse(user_message, conversation_id):
     api_endpoint = "/api/generate"
 
     # Fetch the last 10 messages in chronological order (oldest first)
-    messages = NymMessage.objects.filter(conversation=conversation_id).order_by('-created_at')[:10]
+    messages = NymMessage.objects.filter(conversation=conversation_id).order_by('-created_at')[:30]
     # Optionally, reverse the list to maintain chronological order:
     messages = list(messages)[::-1]
 
@@ -22,7 +22,16 @@ def getBotResponse(user_message, conversation_id):
         history += f"{msg.sender}: {text}\n"
     
     # Append the current user question
-    context = f"Answer this query: {user_message}. For context, here is the conversation history:\n{history}\n"
+    context = (
+        "You're a helpful AI assistant"
+        "Answer the user's query"
+        "Use the conversation history as context to answer the question"
+        "Conversation history:\n"
+        f"{history}\n\n"
+        "Don't mention past commands."
+        "Pretend you're responding directly to the user."
+        "User's query: {user_message}"
+    )
 
     payload = {
         "model": "llama3.2:1b",
