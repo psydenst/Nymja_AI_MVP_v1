@@ -184,7 +184,7 @@ export default function Home() {
 		try {
 			// Send the user's message.
 			const response = await fetch(
-				`http://localhost:8000/api/conversations/${conversationId}/messages/send/`,
+				`/api/conversations/${conversationId}/messages/send/`,
 				{
 					method: 'POST',
 					headers: {
@@ -283,7 +283,7 @@ export default function Home() {
 		setNewConversationName('');
 		
 		try {
-			const response = await fetch('http://localhost:8000/api/conversations/create/', {
+			const response = await fetch('api/conversations/create/', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

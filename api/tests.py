@@ -10,12 +10,12 @@ id = uuid.UUID('5dfc6aef-8fb5-4288-887b-fa3437c05650')  # Substitua pelo UUID re
 # dfa735eb-3723-4b17-b235-cfeae9562e00 conversa VASCO
 message_id = uuid.UUID('a26c802f-d6cf-4abe-913d-6087eb115bc4')
 
-#url = f'http://localhost:8000/api/conversations/{id}/messages/send/'
 
-url = f'http://localhost:8000/api/messages/{message_id}'
+#url = f'/api/conversations/{id}/messages/send/'
 
+url = f'/api/messages/{message_id}'
 
-#url = 'http://localhost:8000/api/conversations/create/'
+#url = '/api/conversations/create/'
 
 
 

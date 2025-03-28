@@ -18,7 +18,7 @@ export async function listConversations(userToken: string | null): Promise<any[]
   }
 
   try {
-    const response = await fetch('http://localhost:8000/api/conversations/', {
+    const response = await fetch('/api/conversations/', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -67,7 +67,7 @@ export async function fetchFullConversation(
 
   try {
     const response = await fetch(
-      `http://localhost:8000/api/conversations/${conversationId}/messages/`,
+      `/api/conversations/${conversationId}/messages/`,
       {
         method: 'GET',
         headers: {
@@ -115,7 +115,7 @@ export async function refreshAccessToken(): Promise<string> {
     throw new Error("Tokens are missing.");
   }
 
-  const response = await fetch("http://localhost:8000/api/auth/token/refresh/", {
+  const response = await fetch("/api/auth/token/refresh/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -217,7 +217,7 @@ export async function getBotResponse(
 
   try {
     const response = await fetch(
-      `http://localhost:8000/api/conversations/${messageId}/messages/response/`,
+      `/api/conversations/${messageId}/messages/response/`,
       {
         method: 'POST',
         headers: {
@@ -258,7 +258,7 @@ export async function saveMessage(
 
   try {
     const response = await fetch(
-      `http://localhost:8000/api/conversations/${conversationId}/messages/send/`,
+      `/api/conversations/${conversationId}/messages/send/`,
       {
         method: 'POST',
         headers: {
@@ -305,7 +305,7 @@ export async function createDefaultConversation(userToken: string | null): Promi
 
   try {
     // Call the conversation creation endpoint with the default name.
-    const response = await fetch('http://localhost:8000/api/conversations/create/', {
+    const response = await fetch('/api/conversations/create/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -338,7 +338,7 @@ export async function deleteConversation(
   }
   try {
     const response = await fetch(
-      `http://localhost:8000/api/conversations/${conversationId}/delete/`,
+      `/api/conversations/${conversationId}/delete/`,
       {
         method: 'DELETE',
         headers: {

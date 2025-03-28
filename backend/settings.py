@@ -33,7 +33,7 @@ SECRET_KEY = 'django-insecure-&a)z&5_pkttgv0wt6!-ymrsrfb99wac%$0u0$z1r5g1_@_1dil
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['chat-test.tupinymquim.com']
 
 
 # Application definition
