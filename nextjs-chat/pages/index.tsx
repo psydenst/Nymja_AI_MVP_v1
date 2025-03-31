@@ -31,6 +31,8 @@ export default function Home() {
 	const [inputBarHeight, setInputBarHeight] = useState('6%');
 	const [isFocused, setIsFocused] = useState(false);
 	const newlineCount = (userMessage.match(/\n/g) || []).length;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
 
   // Initialize accessToken from localStorage
   const [accessToken, setAccessToken] = useState<string | null>(() => {
@@ -39,6 +41,11 @@ export default function Home() {
     }
     return null;
   });
+
+  // Toggle handler for the sidebar
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => !prev);
+  };
 
   // Validate and refresh token on page load.
   useEffect(() => {
@@ -321,7 +328,6 @@ export default function Home() {
         <title>Nymja.AI</title>
         <link rel="icon" href="/favicon_nym.svg" />
       </Head>
-
 			{/* Logout Button in the top-left corner */}
 			<div className={styles.accordion} onClick={handleLogout}>
 				<img
@@ -343,12 +349,28 @@ export default function Home() {
       <main>
         <div className={styles.container}>
           <div className="w-100 d-flex justify-content-center align-items-center">
-            <SearchList
-              conversations={conversations}
-              setCurrentConversationIndex={setCurrentConversationIndex}
-              currentConversationIndex={currentConversationIndex}
-              updateConversation={updateConversation}
-            />
+          {/* Desktop SearchList congfig */}
+            <div className={`${styles.searchListContainer} h-100 d-flex align-items-center`}> 
+              <SearchList
+                conversations={conversations}
+                setCurrentConversationIndex={setCurrentConversationIndex}
+                currentConversationIndex={currentConversationIndex}
+                updateConversation={updateConversation}
+              />
+            </div>
+            {/* Hamburger icon to toggle sidebar (visible on mobile/tablet) */}
+            <div className={styles.sidebarToggle} onClick={toggleSidebar}>
+              ☰
+            </div>
+            {/* Sidebar that will slide in on mobile/tablet */}
+            <div className={`${styles.sidebar} ${sidebarOpen ? styles.open : ''}`}>
+              <SearchList
+                conversations={conversations}
+                setCurrentConversationIndex={setCurrentConversationIndex}
+                currentConversationIndex={currentConversationIndex}
+                updateConversation={updateConversation}
+              />
+            </div>
             <div className={styles.cover_container}>
               <button
                 onClick={reload_page}
