@@ -428,8 +428,9 @@ export default function Home() {
                   style={{
                     display: 'flex',
                     position: 'absolute',
-                    bottom: '48%',
-                    left: '45%',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
                     opacity: '0.1',
                   }}
                 >
