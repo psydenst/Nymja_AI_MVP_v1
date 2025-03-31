@@ -348,3 +348,61 @@
 	opacity: 0.65;
 	line-height: var(--input-height) !important;
 }
+
+/* RETRACTABLE SIDEBAR + MOBILE CSS */
+
+/* Desktop version: show search list container, hide sidebar toggle & sidebar */
+.searchListContainer {
+  display: block;
+  /* Give it an explicit height if needed */
+}
+
+/* Hide mobile sidebar and toggle on large screens */
+.sidebarToggle {
+  display: none;
+}
+.sidebar {
+  display: none;
+}
+
+/* Media Query for mobile/tablet */
+@media (max-width: 768px) {
+  /* Hide the desktop search list container */
+  .searchListContainer {
+    display: none;
+  }
+  
+  /* Show the hamburger icon */
+  .sidebarToggle {
+    display: block;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background-color: #444;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+    z-index: 1002;
+    cursor: pointer;
+  }
+  
+  /* Show the sidebar, initially off-screen */
+  .sidebar {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: -250px; /* Hidden by default */
+    width: 250px;
+    height: 100%;
+    background-color: rgba(217,217,217,0.9);
+    transition: left 0.3s ease;
+    z-index: 1001;
+    overflow-y: auto;
+    padding: 1rem;
+  }
+  
+  /* When the sidebar is open, slide it in */
+  .sidebar.open {
+    left: 0;
+  }
+}
