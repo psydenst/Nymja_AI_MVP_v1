@@ -16,6 +16,7 @@ services:
       - DATABASE_NAME=${POSTGRES_DB}  # Database name
       - DATABASE_USER=${POSTGRES_USER}  # Database user
       - DATABASE_PASSWORD=${POSTGRES_PASSWORD}  # Database password
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY} 
     depends_on:
       - db
       - ollama

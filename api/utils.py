@@ -1,57 +1,57 @@
 import json
 import http.client
+from django.conf import settings
 from .models import NymConversation, NymMessage
 from rest_framework import status
+import os
+import requests
 
-### Function to get lhama3 response ####
 
 def getBotResponse(user_message, conversation_id):
-    api_host = "ollama"  
-    api_port = 11434
-    api_endpoint = "/api/generate"
 
-    # Fetch the last 10 messages in chronological order (oldest first)
+    api_key = settings.OPENROUTER_API_KEY
+    if not api_key:
+        raise RuntimeError("OPENROUTER_API_KEY not set in settings")
+
+    api_url = "https://openrouter.ai/api/v1/chat/completions"
+
+    # Fetch and sort the last 30 messages
     messages = NymMessage.objects.filter(conversation=conversation_id).order_by('-created_at')[:30]
-    # Optionally, reverse the list to maintain chronological order:
-    messages = list(messages)[::-1]
+    messages = list(messages)[::-1]  # chronological order
 
-    # Build the conversation history without excluding the current message
-    history = ""
+    # Convert to OpenAI-compatible "messages" format
+    chat_history = []
     for msg in messages:
-        text = msg.decrypt_text()
-        history += f"{msg.sender}: {text}\n"
-    
-    # Append the current user question
-    context = (
-        "You're a helpful AI assistant"
-        "Answer the user's query"
-        "Use the conversation history as context to answer the question"
-        "Conversation history:\n"
-        f"{history}\n\n"
-        "Don't mention past commands."
-        "Pretend you're responding directly to the user."
-        "User's query: {user_message}"
-    )
+        role = "user" if msg.sender != "bot" else "assistant"
+        chat_history.append({
+            "role": role,
+            "content": msg.decrypt_text()
+        })
 
-    payload = {
-        "model": "llama3.2:1b",
-        "prompt": context,
-        "stream": False,
+    # Add the current user message
+    chat_history.append({
+        "role": "user",
+        "content": user_message
+    })
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
     }
 
-    payload_data = json.dumps(payload)
-    
-    conn = http.client.HTTPConnection(api_host, api_port, timeout=200)
-    conn.request("POST", api_endpoint, body=payload_data, headers={"Content-Type": "application/json"})
-    response = conn.getresponse()
+    payload = {
+        "model": "deepseek/deepseek-r1:free",
+        "messages": chat_history,
+        "temperature": 0.7
+    }
 
-    response_data = response.read().decode("utf-8")
-        
-    response_json = json.loads(response_data)
+    response = requests.post(api_url, headers=headers, json=payload)
 
-    text = response_json['response']
+    if response.status_code != 200:
+        print("API error:", response.text)
+        return None
 
-    return text
+    return response.json()['choices'][0]['message']['content']
 
 ### validate user message ###
 

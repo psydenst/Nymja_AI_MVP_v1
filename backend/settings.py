@@ -22,7 +22,7 @@ POSTGRES_USER = os.getenv('POSTGRES_USER')
 POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
 POSTGRES_HOST = os.getenv('POSTGRES_HOST')
 POSTGRES_PORT = os.getenv('POSTGRES_PORT')
-
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -33,7 +33,7 @@ SECRET_KEY = 'django-insecure-&a)z&5_pkttgv0wt6!-ymrsrfb99wac%$0u0$z1r5g1_@_1dil
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['chat-test.tupinymquim.com']
+ALLOWED_HOSTS = ['chat-test.tupinymquim.com', 'localhost', '127.0.0.1', '85.239.55.77']
 
 
 # Application definition
