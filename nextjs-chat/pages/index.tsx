@@ -1,5 +1,7 @@
 import Head from 'next/head';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import styles from '../styles/Home.module.css';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
@@ -350,7 +352,7 @@ export default function Home() {
         <div className={styles.container}>
           <div className="w-100 d-flex justify-content-center align-items-center">
           {/* Desktop SearchList congfig */}
-            <div className={`${styles.searchListContainer} h-100 d-flex align-items-center`}> 
+            <div className={`${styles.searchListContainer} h-100 d-flex align-items-center mr-2`}> 
               <SearchList
                 conversations={conversations}
                 setCurrentConversationIndex={setCurrentConversationIndex}
@@ -379,7 +381,7 @@ export default function Home() {
                   border: 'none',
                   padding: 0,
                   position: 'absolute',
-                  right: '3.9%',
+                  right: '5%',
                   top: '6.2%',
                   cursor: 'pointer',
                 }}
@@ -438,8 +440,7 @@ export default function Home() {
 															<span>.</span>
 														</span>
 													) : (
-														message.text
-													)}
+														<ReactMarkdown>{message.text}</ReactMarkdown>													)}
                         </div>
                       </div>
                     );

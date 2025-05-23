@@ -22,12 +22,13 @@
   align-items: center;
 }
 
-.sidebar
-{
+.searchList_wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: rgba(	217, 217, 217, 10%);
   height: 90%;
   width: 18vw;
-  margin-right: 5vw;
   border-radius: 1vw; 
 
 }
@@ -40,7 +41,7 @@
   margin-bottom: 1vh;
   background-color: rgba(217, 217, 217, 10%);
   opacity: 1;
-  border-radius: 0.5vhearc
+  border-radius: 0.5vh;
 }
 
 .inner_sidebar
@@ -219,7 +220,6 @@
   }
 }
 
-
 /* Accordion icon container */
 .accordion {
   position: absolute;
@@ -354,6 +354,7 @@
 /* Desktop version: show search list container, hide sidebar toggle & sidebar */
 .searchListContainer {
   display: block;
+  margin-right: 40px !important;
   /* Give it an explicit height if needed */
 }
 
@@ -365,14 +366,23 @@
   display: none;
 }
 
+.searchList_wrapper {
+  display: none;
+}
+
+
 /* Media Query for mobile/tablet */
 @media (max-width: 768px) {
-  /* Hide the desktop search list container */
+  /* (já existentes) */
   .searchListContainer {
-    display: none;
+    display: none !important;
   }
-  
-  /* Show the hamburger icon */
+
+  .searchList_wrapper {
+    height: 95vh;
+    width: 100% !important;
+  }
+
   .sidebarToggle {
     display: block;
     position: fixed;
@@ -385,24 +395,57 @@
     z-index: 1002;
     cursor: pointer;
   }
-  
-  /* Show the sidebar, initially off-screen */
+
   .sidebar {
     display: block;
     position: fixed;
     top: 0;
-    left: -250px; /* Hidden by default */
+    left: -250px;
     width: 250px;
-    height: 100%;
-    background-color: rgba(217,217,217,0.9);
+    height: 100% !important;
+    background-color: rgba(217, 217, 217, 0.30);
     transition: left 0.3s ease;
     z-index: 1001;
-    overflow-y: auto;
     padding: 1rem;
   }
-  
-  /* When the sidebar is open, slide it in */
+
   .sidebar.open {
     left: 0;
   }
+
+  .search_sidebar {
+    width: 88%;
+    height: 5%;
+    margin: 0 0 12px 0;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+  }
+
+  .inner_sidebar {
+    width: 88%;
+    height: 85% !important;
+    max-height: calc(100vh - 70px);
+    overflow-y: none;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  .list_elements img {
+    opacity: 1 !important;
+  }
+
+  .search_input::-webkit-input-placeholder { /* Chrome/Edge/Safari */
+    color: #fff !important;
+    opacity: 0.60 !important;
+  }
+  .search_input::-moz-placeholder { /* Firefox 19+ */
+    color: #fff !important;
+    opacity: 0.60 !important;
+  }
+  .search_input:-ms-input-placeholder { /* IE 10+ */
+    color: #fff !important;
+    opacity: 0.60 !important;
+  }
+
 }

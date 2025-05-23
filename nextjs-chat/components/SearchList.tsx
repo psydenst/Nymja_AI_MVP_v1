@@ -93,7 +93,7 @@ const SearchList: React.FC<SearchListProps> = ({
   });
 
   return (
-    <div className={`${styles.sidebar} d-flex flex-column align-items-center justify-content-center`}>
+    <div className={`${styles.searchList_wrapper} d-flex flex-column align-items-center justify-content-center`}>
       <div className={`${styles.search_sidebar} d-flex align-items-center justify-content-center opacity-100`}>
         <div className="d-flex flex-row justify-content-center align-items-center flex-start">
           <img
@@ -135,6 +135,7 @@ const SearchList: React.FC<SearchListProps> = ({
                   alt="Delete"
                   style={{
                     width: '1.2vw',
+                    minWidth: '15px',
                     cursor: 'pointer',
                     filter: 'invert(1)',
                   }}

@@ -13,7 +13,9 @@
     "node": "^23.1.0",
     "react": "18.2.0",
     "react-bootstrap": "^2.10.4",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "engines": {
     "node": ">=18"
