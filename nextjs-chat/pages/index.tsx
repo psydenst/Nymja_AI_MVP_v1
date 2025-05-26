@@ -518,9 +518,9 @@ export default function Home() {
 									}}
 								>
 									<Image
-										src="/send-button.png"
+										src="/send1.png"
 										alt="Send"
-										style={{ width: '25px', height: '25px' }}
+										style={{ width: '25px', height: '25px', filter: 'invert(100%)', }}
 									/>
 								</button>
 							</div>
