@@ -62,12 +62,26 @@
 	opacity: 0.7;
 }
 
-.transparent_input 
-{
-	display: flex;
-  background-color: rgba(0,0,0,0);
+.transparent_input {
+  flex: 1;                     /* cresce para preencher */
+  width: 100%;
+  box-sizing: border-box;
+  /* padding e line-height controlam o alinhamento vertical */
+  padding: 0.5rem 0;           /* 8px em cima/baixo */ 
+  /* deixa o textarea crescer conforme o conteúdo */
+  height: auto;
+  /* mínimo de 1 linha (~2.5rem) */
+  min-height: 2.5rem;
+  /* máximo de 5 linhas: 5 * 1.25rem + padding top/bottom (2 * 0.5rem) */
+  max-height: calc(1.25rem * 5 + 1rem);
+  line-height: 1.25rem;        /* cerca de 20px */
+  font-size: 1rem;
   border: none;
-  margin-left: 0.5vw;
+  outline: none;
+  background: transparent;
+  color: #E5EAFF;
+  transition: max-height 0.2s ease;
+  overflow-y: auto;            /* scroll só quando necessário */
 }
 
 .transparent_input:focus {
@@ -162,18 +176,16 @@
   scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
 }
 
-.input_bar
-{
-	position: relative; 
-	height: 6%;
-  background-color: rgba(217, 217, 217, 10%);
+.input_bar {
+  background-color: rgba(217, 217, 217, 0.10);  /* ou use 10% se preferir */
   width: 65vw;
   display: flex;
-  align-items: center !important;
+  align-items: center !important; 
+  padding: 0.75rem 1rem;    /* 12px topo/baixo, 16px laterais */
   border-radius: 1vw;
   margin: 0 5% 5%;
+  box-sizing: border-box;  /* faz o padding entrar no cálculo de largura */
 }
-
 
 .to_white
 {
@@ -342,11 +354,10 @@
   bottom: 0;
   display: flex;
   align-items: center;       /* vertically center */
-  justify-content: flex-start;   /* horizontally center */
+  padding-left: 0.5rem;     /* não gruda no canto */
   pointer-events: none;      /* allow clicks to pass through */
   color: #E5EAFF;
 	opacity: 0.65;
-	line-height: var(--input-height) !important;
 }
 
 /* RETRACTABLE SIDEBAR + MOBILE CSS */
@@ -447,5 +458,15 @@
     color: #fff !important;
     opacity: 0.60 !important;
   }
+
+  .input_bar {
+    padding: 1rem 1rem;
+  }
+  .transparent_input {
+    min-height: 3rem;
+    padding: 0.75rem 0;
+  }
+
+
 
 }

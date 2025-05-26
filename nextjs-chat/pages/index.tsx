@@ -6,6 +6,7 @@ import styles from '../styles/Home.module.css';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import SearchList from '../components/SearchList';
+import Image from 'next/image';
 import {
   listConversations,
   refreshAccessToken,
@@ -34,6 +35,7 @@ export default function Home() {
 	const [isFocused, setIsFocused] = useState(false);
 	const newlineCount = (userMessage.match(/\n/g) || []).length;
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 
   // Initialize accessToken from localStorage
@@ -136,41 +138,39 @@ export default function Home() {
     router.push('/login');
   };
 
-	const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-		const value = e.target.value;
-		setUserMessage(value);
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const ta = e.target
 
-		// Count newlines
-		const newlineCount = (value.match(/\n/g) || []).length;
+    // 1️⃣ Auto-resize: reseta a altura e logo depois ajusta ao conteúdo
+    ta.style.height = 'auto'
+    ta.style.height = `${ta.scrollHeight}px`
 
-		// Determine candidate height based on character count
-		let heightByChars = '6%';
-		if (value.length > 220) {
-			heightByChars = '22%';
-		} else if (value.length > 70) {
-			heightByChars = '10%';
-		}
+    // 2️⃣ Atualiza o estado da mensagem
+    const value = ta.value
+    setUserMessage(value)
 
-		// Determine candidate height based on newline count
-		let heightByNewlines = '6%';
-		if (newlineCount >= 2) {
-			heightByNewlines = '22%';
-		} else if (newlineCount >= 1) {
-			heightByNewlines = '10%';
-		}
+    // 3️⃣ Conta quebras de linha
+    const newlineCount = (value.match(/\n/g) || []).length
 
-		// Decide on the larger height (i.e. "22%" > "10%" > "6%")
-		let newHeight = '6%';
-		if (heightByChars === '22%' || heightByNewlines === '22%') {
-			newHeight = '22%';
-		} else if (heightByChars === '10%' || heightByNewlines === '10%') {
-			newHeight = '10%';
-		} else {
-			newHeight = '6%';
-		}
-		
-		setInputBarHeight(newHeight);
-	};
+    // 4️⃣ Lógica original de percentuais (chars vs newlines)
+    let heightByChars: '6%' | '10%' | '22%' = '6%'
+    if (value.length > 220) heightByChars = '22%'
+    else if (value.length > 70) heightByChars = '10%'
+
+    let heightByNewlines: '6%' | '10%' | '22%' = '6%'
+    if (newlineCount >= 2) heightByNewlines = '22%'
+    else if (newlineCount >= 1) heightByNewlines = '10%'
+
+    let newHeight: '6%' | '10%' | '22%' = '6%'
+    if (heightByChars === '22%' || heightByNewlines === '22%') {
+      newHeight = '22%'
+    } else if (heightByChars === '10%' || heightByNewlines === '10%') {
+      newHeight = '10%'
+    }
+
+    // 5️⃣ Atualiza o estado do wrapper (.input_bar)
+    setInputBarHeight(newHeight)
+  }
 
 	const sendMessage = async () => {
 		if (userMessage.trim() === '' || isSending) return;
@@ -469,17 +469,18 @@ export default function Home() {
                 </div>
               </div>
 							<div
-								className={`${styles.input_bar} d-flex align-items-center p-3`}
-								style={{ height: inputBarHeight }}
+								className={`${styles.input_bar} d-flex align-items-center`}
 							>
-								<div style={{ position: 'relative', width: '100%', height: '100%' }}>
+								<div style={{ position: 'relative', width: '100%'}}>
 									{userMessage === '' && !isFocused && (
 										<span className={styles.customPlaceholder}>
 											Type a message...
 										</span>
 									)}
 									<textarea
-										className={`${styles.transparent_input} flex-grow-1 d-felx align-items-center`}
+                    ref={textareaRef}
+                    rows={1}
+										className={`${styles.transparent_input} flex-grow-1 d-flex align-items-center`}
 										value={userMessage}
 										onChange={handleInputChange}
 										onKeyDown={(e) => {
@@ -516,8 +517,8 @@ export default function Home() {
 										padding: '0',
 									}}
 								>
-									<img
-										src="/buttonChat.svg"
+									<Image
+										src="/send-button.png"
 										alt="Send"
 										style={{ width: '25px', height: '25px' }}
 									/>
