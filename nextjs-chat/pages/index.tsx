@@ -376,15 +376,7 @@ export default function Home() {
             <div className={styles.cover_container}>
               <button
                 onClick={reload_page}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  position: 'absolute',
-                  right: '5%',
-                  top: '6.2%',
-                  cursor: 'pointer',
-                }}
+                className={styles.addButton}
               >
                 <img
                   src="/add.png"
