@@ -395,13 +395,30 @@
 /* Media Query for mobile/tablet */
 @media (max-width: 768px) {
   /* (já existentes) */
-  
+
+  .sidebar {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: -250px;
+    width: 250px;
+    height: 100dvh !important;
+    background-color: rgba(60, 61, 62, 1);
+    transition: left 0.3s ease;
+    z-index: 6;
+    padding: 1rem;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
   .searchListContainer {
     display: none !important;
   }
 
   .searchList_wrapper {
-    height: 95vh;
+    height: 100% !important;
     width: 100% !important;
   }
 
@@ -412,11 +429,11 @@
   }
 
   .addIcon {
-  height: 2vw;
-  width: auto;
-  min-height: 25px;
-  filter: invert(1);
-  opacity: 0.5;
+    height: 2vw;
+    width: auto;
+    min-height: 25px;
+    filter: invert(1);
+    opacity: 0.5;
   }
 
   .sidebarToggle {
@@ -432,35 +449,18 @@
     cursor: pointer;
   }
 
-  .sidebar {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: -250px;
-    width: 250px;
-    height: 100% !important;
-    background-color: rgba(217, 217, 217, 0.30);
-    transition: left 0.3s ease;
-    z-index: 1001;
-    padding: 1rem;
-  }
-
-  .sidebar.open {
-    left: 0;
-  }
-
   .search_sidebar {
     width: 88%;
     height: 5%;
-    margin: 0 0 12px 0;
+    padding: 8px;
     background-color: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
   }
 
   .inner_sidebar {
-    width: 88%;
-    height: 85% !important;
-    max-height: calc(100vh - 70px);
+    width: 88% !important;
+    height: 90% !important;
+    max-height: calc(100dvh - 70px);
     overflow-y: none;
     background-color: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
@@ -493,7 +493,7 @@
   }
 
   .cover_container {
-    height: 100dvh !important;
+    height: 95dvh !important;
     width: 100vw !important;    /* ou use 100% se preferir */
     margin: 0 2.5vw 1rem;      /* centraliza com margens laterais pequenas */
   }
@@ -514,6 +514,10 @@
     top: 10px!important;
     padding: 0.5rem;
     z-index: 5;
+  }
+
+  .history {
+    height: 100% !important;
   }
 
 }
