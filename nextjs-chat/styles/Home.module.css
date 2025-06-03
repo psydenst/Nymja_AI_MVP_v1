@@ -403,7 +403,7 @@
     left: -250px;
     width: 250px;
     height: 100dvh !important;
-    background-color: rgba(60, 61, 62, 1);
+    background-color: rgba(60, 61, 62, 0.9);
     transition: left 0.3s ease;
     z-index: 6;
     padding: 1rem;

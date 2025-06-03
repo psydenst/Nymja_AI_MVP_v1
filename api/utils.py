@@ -55,11 +55,14 @@ def getBotResponse(user_message, conversation_id):
 
 ### validate user message ###
 
-def ValidadeInputs(username, email):
-	if not username or not email:
-		return None
-	return True
-	
+def ValidadeInputs(username, password):
+    if not username:
+        raise ValueError("Username is required")
+    if not password:
+        raise ValueError("Password is required")
+    if len(password) < 6:
+        raise ValueError("Password must be at least 6 characters long")
+
 def conversationExists(conversation_id, user):
 	if not conversation_id or not user:
 		return None

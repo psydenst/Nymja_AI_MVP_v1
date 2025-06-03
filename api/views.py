@@ -2,7 +2,7 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import MessageSerializer, UserSerializer, ConversationSerializer
+from .serializers import MessageSerializer, UserSerializer, ConversationSerializer, RegisterSerializer
 from .models import NymUser, NymConversation, NymMessage
 from django.contrib.auth import authenticate
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -11,7 +11,8 @@ from .erros import print_error
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import getBotResponse, ValidadeInputs, conversationExists, decryptMessage
 from .permissions import isNymAdmin
-
+from mnemonic import Mnemonic
+import hashlib
 ########## ADMIN ROUTES ##########
 
 @api_view(['GET'])
@@ -54,9 +55,6 @@ def LoginNymUser(request):
 			username = data.get('username')
 			password = data.get('password')
 			
-			if ValidadeInputs(username, password) is None:
-				return Response({"detail": "Username or password not provided"}, status=status.HTTP_400_BAD_REQUEST)
-			
 			user = authenticate(username=username, password=password)
 			
 			if user:
@@ -67,7 +65,6 @@ def LoginNymUser(request):
 							"access_token": str(access_token),
 							"refresh_token": str(refresh),
 							"username": user.username,
-							"email": user.email,
 						}, status=status.HTTP_200_OK)
 					else:
 						return Response({"detail": "User is not active"}, status=status.HTTP_403_FORBIDDEN)
@@ -77,38 +74,83 @@ def LoginNymUser(request):
 			print_error(e, True)
 			return Response({"detail": "An error occurred while logging in"}, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def GenerateMnemonic(request):
+    """
+    Step 1: No DB write yet. Generate a fresh 24-word BIP-39 phrase
+    and return it as JSON. The client must display this phrase once
+    (and store it securely) before calling the second step.
+    Response: { "mnemonic_phrase": "abandon abandon …" }
+    """
+    try:
+        mnemo = Mnemonic("english")
+        phrase = mnemo.generate(strength=256)  # 24 words (256 bits of entropy)
+        return Response({"mnemonic_phrase": phrase}, status=status.HTTP_200_OK)
+    except Exception as e:
+        # Log the exception if you want:
+        print_error(e, True)
+        return Response(
+            {"detail": "Could not generate mnemonic at this time."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def RegisterNymUser(request):
+def CompleteRegister(request):
+    """
+    Step 2: Client posts { username, password, mnemonic_phrase }.
+    We call NymUser.objects.create_user(...), which will:
+      - SHA256( mnemonic_phrase ) → mnemonic_hash
+      - set_password(password)
+      - save(username, mnemonic_hash, password)
+    Return the serialized user (id & username & created_at).
+    """
+    data = request.data
+    username = data.get("username")
+    password = data.get("password")
+    mnemonic_phrase = data.get("mnemonic_phrase")
 
-	if request.method == 'POST':
-		try:
+    # 1) Basic presence check:
+    if not username or not password or not mnemonic_phrase:
+        return Response(
+            {"detail": "username, password and mnemonic_phrase are all required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
-			data = request.data
+    # 2) Check if username is already taken
+    if NymUser.objects.filter(username=username).exists():
+        return Response(
+            {"username": ["This username is already in use."]},
+            status=status.HTTP_409_CONFLICT
+        )
 
-			username = data.get('username')
-			email = data.get('email')
+    # 3) Compute SHA256 of provided phrase and check uniqueness of mnemonic_hash
+    hashed = hashlib.sha256(mnemonic_phrase.encode("utf-8")).hexdigest()
+    if NymUser.objects.filter(mnemonic_hash=hashed).exists():
+        return Response(
+            {"mnemonic_phrase": ["This mnemonic_phrase has already been used."]},
+            status=status.HTTP_409_CONFLICT
+        )
 
-			if ValidadeInputs(username, email) is None:
-				return Response({"detail": "Username or email not provided"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        # 4) Create the new user via your manager
+        user = NymUser.objects.create_user(
+            username=username,
+            password=password,
+            mnemonic_phrase=mnemonic_phrase
+        )
+    except Exception as exc:
+        # If your manager raises ValueError, capture it here to send back as 400.
+        return Response(
+            {"detail": str(exc)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
-			user = NymUser.objects.filter(username=username, email=email).first()
-
-			if user:
-				return Response({"detail": "Username or email is already registered"}, status=status.HTTP_409_CONFLICT)
-			
-			serializer = UserSerializer(data=data)
-
-			if serializer.is_valid():
-				serializer.save()
-				return Response(serializer.data, status=status.HTTP_201_CREATED)
-			else:
-				print_error(serializer.errors, False)
-				return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-		except Exception as e:
-			print_error(e, True)
-			return Response(status=status.HTTP_400_BAD_REQUEST)
+    # 5) Return the newly created user’s basic info
+    serialized = UserSerializer(user)
+    return Response(serialized.data, status=status.HTTP_201_CREATED)
 
 ########## CONVERSATION ROUTES ##########
 

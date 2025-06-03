@@ -4,7 +4,8 @@ from . import views
 
 urlpatterns = [
     # Auth #
-    path('auth/register/', views.RegisterNymUser, name='register'),
+    path('auth/mnemonic/', views.GenerateMnemonic, name='mnemonic'),
+    path('auth/register/', views.CompleteRegister, name='register'),
     path('auth/login/', views.LoginNymUser, name='login'),
     path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
