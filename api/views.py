@@ -74,7 +74,7 @@ def LoginNymUser(request):
 			print_error(e, True)
 			return Response({"detail": "An error occurred while logging in"}, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['POST'])
+@api_view(['GET'])
 @permission_classes([AllowAny])
 def GenerateMnemonic(request):
     """

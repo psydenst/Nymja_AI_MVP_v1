@@ -37,6 +37,7 @@
     background: rgba(71, 71, 71, 0.2);
     color: #fff;
     font-size: 16px;
+    resize: none;
   }
   
   .inputField::placeholder {
@@ -57,6 +58,39 @@
     transition: background 0.3s;
   }
   
+  .inputField:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: inherit !important;
+    cursor: text;
+  }
+
+/* Fade out quickly */
+  .fadeOut {
+    display: inline-block;
+    opacity: 0;
+    transition: opacity 150ms ease-in-out;
+  }
+
+  /* Fade in quickly */
+  .fadeIn {
+    display: inline-block;
+    opacity: 1;
+    transition: opacity 150ms ease-in-out;
+  }
+
+  /* copy button fade in fade out */
+  @keyframes fadeInOut {
+    0%   { opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .fadeAlert {
+    animation: fadeInOut 3s ease-in-out forwards;
+  }
+
   .loginButton:hover {
     background: #323138;
   }
@@ -72,6 +106,28 @@
     text-decoration: underline;
   }
   
+  .importantBanner {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 400px;
+    width: 100%;
+    background-color: #ffecb3;  /* a pale yellow */
+    color: #333333;             /* dark text for contrast */
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    text-align: left;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  /* Optionally, make sure the banner’s bold text stands out */
+  .importantBanner strong {
+    font-weight: bold;
+  }
+
   @media (max-width: 768px) {
     .loginBox {
       width: 90%;

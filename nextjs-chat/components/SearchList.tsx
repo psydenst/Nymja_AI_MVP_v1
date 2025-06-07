@@ -1,7 +1,13 @@
+// nextjs-chat/components/SearchList.tsx
+
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/Home.module.css';
-import { fetchFullConversation, deleteConversation } from '../utils/utils';
+import {
+  fetchFullConversation,
+  deleteConversation,
+  logoutUser,              // ← import the logout helper
+} from '../utils/utils';
 
 interface Message {
   sender: string;
@@ -32,9 +38,14 @@ const SearchList: React.FC<SearchListProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
 
+  // ─── Logout handler (same as in index.tsx) ───────────────────────────
+  const handleLogout = () => {
+    logoutUser();           // clears tokens / JWT
+    router.push('/login');  // redirect back to login
+  };
+
   // Handle conversation click.
   const handleConversationClick = async (conversationId: string, sortedIndex: number) => {
-    console.log('Clicked conversation ID:', conversationId);
     setCurrentConversationIndex(sortedIndex);
 
     const token = localStorage.getItem('accessToken');
@@ -47,10 +58,9 @@ const SearchList: React.FC<SearchListProps> = ({
 
     try {
       const fullConversation = await fetchFullConversation(conversationId, token);
-      console.log('Fetched conversation:', fullConversation);
       updateConversation(conversationId, fullConversation);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching conversation:', error);
     }
   };
 
@@ -59,55 +69,53 @@ const SearchList: React.FC<SearchListProps> = ({
     const token = localStorage.getItem('accessToken');
     try {
       await deleteConversation(conversationId, token);
-      // Option: Reload the page to update the conversation list.
       router.reload();
     } catch (error) {
       console.error('Error deleting conversation:', error);
     }
   };
 
-  // Filter conversations by search term.
+  // Filter & sort as before...
   const filteredConversations = conversations
     .map((conversation, index) => ({ conversation, index }))
     .filter(({ conversation }) => {
-      if (!conversation.name || conversation.name.trim() === '') {
-        return false;
-      }
-
+      if (!conversation.name?.trim()) return false;
       const term = searchTerm.toLowerCase();
-      const conversationName = conversation.name.toLowerCase();
-      const nameMatches = conversationName.includes(term);
-
-      const messagesMatch = (conversation.messages || []).some((message) =>
-        (message.text || '').toLowerCase().includes(term)
+      const nameMatches = conversation.name.toLowerCase().includes(term);
+      const messagesMatch = (conversation.messages || []).some(m =>
+        m.text.toLowerCase().includes(term)
       );
-
       return nameMatches || messagesMatch;
     });
 
-  // Sort the filtered conversations by created_at (newest first).
   const sortedConversations = filteredConversations.sort((a, b) => {
-    const dateA = new Date(a.conversation.created_at).getTime();
-    const dateB = new Date(b.conversation.created_at).getTime();
-    return dateB - dateA;
+    return (
+      new Date(b.conversation.created_at).getTime() -
+      new Date(a.conversation.created_at).getTime()
+    );
   });
 
   return (
-    <div className={`${styles.searchList_wrapper} d-flex flex-column align-items-center justify-content-center`}>
-      <div className={`${styles.search_sidebar} d-flex align-items-center justify-content-center opacity-100`}>
+    <div
+      className={`${styles.searchList_wrapper} d-flex flex-column align-items-center justify-content-center`}
+    >
+      {/* Search input */}
+      <div
+        className={`${styles.search_sidebar} d-flex align-items-center justify-content-center opacity-100`}
+      >
         <div className="d-flex flex-row justify-content-center align-items-center flex-start">
           <img
             src="/search_white.png"
+            alt="Search Icon"
             style={{
               width: '1vw',
               height: '1vw',
-              minHeight: '15px',
               minWidth: '15px',
+              minHeight: '15px',
               objectFit: 'cover',
               marginLeft: '1vw',
-              opacity: '0.6',
+              opacity: 0.6,
             }}
-            alt="Search Icon"
           />
           <input
             type="text"
@@ -118,18 +126,28 @@ const SearchList: React.FC<SearchListProps> = ({
           />
         </div>
       </div>
+
+      {/* Conversation list */}
       <div className={styles.inner_sidebar}>
-        {sortedConversations.length > 0 ? (
-          <ul className={`${styles.history} h-100 w-100 bg-transparent rounded-0 list-group text-white align-items-center justify-content-start opacity-75`}>
+        {sortedConversations.length > 0 && (
+          <ul
+            className={`${styles.history} h-100 w-100 bg-transparent rounded-0 list-group text-white opacity-75`}
+          >
             {sortedConversations.map(({ conversation }, sortedIndex) => (
               <li
                 key={conversation.id}
                 className={`${styles.list_elements} w-100 d-flex justify-content-between align-items-center list-group-item text-white text-center border-0 opacity-50 ${
-                  sortedIndex === currentConversationIndex ? styles.activeConversation : ''
+                  sortedIndex === currentConversationIndex
+                    ? styles.activeConversation
+                    : ''
                 }`}
-                onClick={() => handleConversationClick(conversation.id, sortedIndex)}
+                onClick={() =>
+                  handleConversationClick(conversation.id, sortedIndex)
+                }
               >
-                <span className={styles.conversationName}>{conversation.name}</span>
+                <span className={styles.conversationName}>
+                  {conversation.name}
+                </span>
                 <img
                   src="/delete.png"
                   alt="Delete"
@@ -147,7 +165,22 @@ const SearchList: React.FC<SearchListProps> = ({
               </li>
             ))}
           </ul>
-        ) : null}
+        )}
+      </div>
+
+      {/* ── Mobile‐only Logout Icon, same as index.tsx ───────────────────────── */}
+      <div className={`d-block d-md-none mt-3`}>
+        <div
+          className={styles.accordion}
+          onClick={handleLogout}
+          style={{ display: 'inline-block' }}
+        >
+          <img
+            src="/logout_nymja_ai.png"
+            alt="Logout"
+            className={styles.arrow_mobile}
+          />
+        </div>
       </div>
     </div>
   );

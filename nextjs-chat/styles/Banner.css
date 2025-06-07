@@ -1,0 +1,44 @@
+/* -------------------------------------------------------------------
+
+  Banner overlay, centered in the viewport. 
+  - On screens ≥768px (desktop/tablet), height = 50vh
+  - On screens <768px (mobile), height = 50dvh (dynamic viewport height)
+  - Fallback order: if the browser doesn’t understand dvh, it will use the preceding vh value.
+
+------------------------------------------------------------------- */
+
+.bannerOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  
+  /* Default for older browsers: use 50vh first */
+  height: 50vh;
+  /* Next, override in browsers that support dvh (mobile) */
+}
+
+.bannerContent {
+  width: 100%;
+  max-width: 600px;
+  height: 100%;
+  color: #FFFFFF;
+  padding: 1.5rem;
+  overflow-y: auto;
+  border-radius: 8px;
+  background-color: transparent;
+}
+
+/* If you want to enforce 50vh for desktop specifically, override in a media query */
+@media (min-width: 768px) {
+  .bannerOverlay {
+    /* On desktop, use 50vh as intended */
+    height: 50dvh;
+    max-height: 60vh;  /* fall back to vh logic */
+  }
+}

@@ -1,194 +1,209 @@
-// register.tsx
+// nextjs-chat/pages/register.tsx
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../styles/Login.module.css';
-import { useRouter } from 'next/router'; // Import useRouter
+import { useRouter } from 'next/router';
+import Banner from '../components/Banner';
 
-export default function Register() {
-  // State variables for form inputs
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+// Note: drop Banner2—no longer needed
+
+export default function RegisterStep1() {
+  // ─── State ──────────────────────────────────────────────────────────────
+  const [showBanner, setShowBanner] = useState<boolean>(true);
+  const [mnemonic, setMnemonic] = useState<string>('');
+  const [mnemonicError, setMnemonicError] = useState<string>('');
+  const [hasSaved, setHasSaved] = useState<boolean>(false);
+  const [copySuccess, setCopySuccess] = useState<boolean>(false);
+
   const router = useRouter();
 
-  // State variables for errors and success message
-  const [passwordError, setPasswordError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-
-  // Function to validate passwords
-  const validatePasswords = () => {
-    if (password && confirmPassword) {
-      if (password !== confirmPassword) {
-        setPasswordError('Passwords do not match');
-      } else if (password.length < 8) {
-        setPasswordError('Password must be at least 8 characters long');
+  // ─── Fetch a new mnemonic phrase ────────────────────────────────────────
+  const handleGenerate = async () => {
+    setMnemonicError('');
+    try {
+      const res = await fetch('/api/auth/mnemonic', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMnemonic(data.mnemonic_phrase || data.mnemonic || '');
+        setHasSaved(false);
       } else {
-        setPasswordError('');
+        const err = await res.json();
+        setMnemonicError(err.detail || 'Failed to generate mnemonic');
       }
-    } else {
-      setPasswordError('');
+    } catch {
+      setMnemonicError('Network error while generating mnemonic');
     }
   };
 
-  // Run validation whenever passwords change
+  // ─── Copy mnemonic to clipboard ──────────────────────────────────────────
+  const handleCopy = () => {
+    if (!mnemonic) return;
+    navigator.clipboard.writeText(mnemonic).then(() => {
+      setCopySuccess(true);
+    });
+  };
+ 
   useEffect(() => {
-    validatePasswords();
-  }, [password, confirmPassword]);
-
-  // Function to handle form submission
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Prevent default form submission
-
-    if (!passwordError) {
-      try {
-        const response = await fetch('/api/auth/register/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ username, email, password }),
-        });
-   
-        if (response.ok) {
-          setSuccessMessage('Registration successful! Redirecting to login...');
-          // Reset form fields
-          setUsername('');
-          setEmail('');
-          setPassword('');
-          setConfirmPassword('');
-          // Optionally, redirect after a delay
-          setTimeout(() => {
-            // For example, using Next.js router
-            router.push('/');
-          }, 2000);
-        } else {
-          const data = await response.json();
-          setPasswordError(data.message || 'Registration failed');
-        }
-      } catch (error) {
-        setPasswordError('An error occurred. Please try again.');
-      }
-    } else {
-      console.log('Form submission prevented due to validation errors');
+    if (copySuccess) {
+      const tid = setTimeout(() => setCopySuccess(false), 3000);
+      return () => clearTimeout(tid);
     }
+  }, [copySuccess]);
+
+  // ─── Navigate to credentials step ────────────────────────────────────────
+  const handleContinueToCredentials = () => {
+    if (!mnemonic) return;
+    router.push({
+      pathname: '/register-credentials',
+      query: { mnemonic },
+    });
   };
 
-  // Determine if the form is invalid
-  const isFormInvalid =
-    !!passwordError || !username || !email || !password || !confirmPassword;
+  // ─── Dismiss the initial overlay banner ─────────────────────────────────
+  const dismissBanner = () => {
+    setShowBanner(false);
+  };
+
+  // ─── Determine button label & disabled state ────────────────────────────
+  // Before mnemonic: label = "GENERATE", enabled.
+  // After mnemonic + !hasSaved: label = "GENERATE", disabled.
+  // After mnemonic + hasSaved: label = "CONTINUE", enabled.
+  const isFetched = mnemonic !== '';
+  const buttonLabel = isFetched ? (hasSaved ? 'CONTINUE' : 'GENERATE') : 'GENERATE';
+  const buttonDisabled = isFetched ? !hasSaved : false;
+  const buttonAction = isFetched
+    ? hasSaved
+      ? handleContinueToCredentials
+      : () => {}        // disabled no-op
+    : handleGenerate;
+
+  // ─── Smoothly animate label changes ────────────────────────────────────
+  // We toggle a CSS class when label changes, to animate opacity:
+  const [fadeClass, setFadeClass] = useState<string>(styles.fadeIn);
+
+  useEffect(() => {
+    // Whenever the buttonLabel changes, trigger a quick fade
+    setFadeClass(styles.fadeOut);
+    const tid = setTimeout(() => {
+      setFadeClass(styles.fadeIn);
+    }, 150); // match animation duration
+    return () => clearTimeout(tid);
+  }, [buttonLabel]);
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} style={{ position: 'relative' }}>
       <Head>
-        <title>Register - Nymja.AI</title>
+        <title>Register – Nymja.AI</title>
         <link rel="icon" href="/favicon_nym.svg" />
       </Head>
 
-      <div className={styles.loginBox}>
-        <h1 className={styles.title}>Register</h1>
-        <form className={styles.form} onSubmit={handleSubmit}>
-          {/* Username Input */}
-          <div className="form-group mb-3">
-            <label htmlFor="username" className="visually-hidden">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              placeholder="Username"
-              className={styles.inputField}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
+      {/* ── Initial Overlay Banner ──────────────────────────────────────────── */}
+      {showBanner && <Banner onContinue={dismissBanner} />}
 
-          {/* Email Input */}
-          <div className="form-group mb-3">
-            <label htmlFor="email" className="visually-hidden">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="Email"
-              className={styles.inputField}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
+      {/* ── Underlying Registration Form ────────────────────────────────────── */}
+      <div className={styles.loginBox} style={{ opacity: showBanner ? 0.3 : 1 }}>
+        <h1 className={styles.title}>Step 1: Generate Your Mnemonic</h1>
 
-          {/* Password Input */}
-          <div className="form-group mb-3">
-            <label htmlFor="password" className="visually-hidden">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              placeholder="Password"
-              className={styles.inputField}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* Confirm Password Input */}
-          <div className="form-group mb-3">
-            <label htmlFor="confirmPassword" className="visually-hidden">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              placeholder="Confirm Password"
-              className={styles.inputField}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* Display password error if any */}
-          {passwordError && (
-            <div className="mb-3" style={{ color: '#B33030' }}>
-              {passwordError}
+        {/* ── Mnemonic Textarea ─────────────────────────────────────────────── */}
+        <div className="form-group mb-1">
+          <label htmlFor="mnemonic" className="form-label">
+            Generate your 24-word login code
+          </label>
+          <textarea
+            id="mnemonic"
+            className={styles.inputField}
+            placeholder="know hover border demand update earth merry day embrace rare price era senior bed grunt leisure blanket advice slight clump chunk shadow barrel"
+            value={mnemonic}
+            readOnly
+            rows={6}
+            style={{ resize: 'none' }}
+          />
+          {mnemonicError && (
+            <div className="mt-1" style={{ color: '#B33030' }}>
+              {mnemonicError}
             </div>
           )}
+        </div>
 
-          {/* Success Message */}
-          {successMessage && (
-            <div className="mb-3 text-success">{successMessage}</div>
-          )}
-
-          {/* Remember Me and Login Link */}
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <div className="d-flex align-items-center">
-              <input type="checkbox" id="rememberMe" />
-              <label htmlFor="rememberMe" className="ms-2">
-                Remember me
-              </label>
-            </div>
-            <a href="/login" className={styles.forgotPassword}>
-              Login
-            </a>
+        {/* ── Copy Icon (appears once mnemonic is non-empty) ──────────────── */}
+        {mnemonic && (
+          <div style={{ textAlign: 'right', marginBottom: '0.5rem' }}>
+            <button
+              onClick={handleCopy}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+              }}
+              title="Copy to clipboard"
+            >
+              <img
+                src="/copy.png"
+                alt="Copy"
+                style={{ width: '24px', height: '24px', filter: 'invert(1)'}}
+              />
+            </button>
           </div>
+        )}
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className={styles.loginButton}
-            disabled={isFormInvalid}
+        {/* ── “Copied to Clipboard” success alert ──────────────────────────── */}
+        {copySuccess && (
+          <div className={`alert alert-success ${styles.fadeAlert}`}
+          role="alert">
+            Copied to Clipboard
+          </div>
+        )}
+
+        {/* ── Checkbox “I’ve saved my mnemonic” (only after mnemonic exists) ── */}
+        {mnemonic && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '1rem',
+            }}
           >
-            REGISTER
-          </button>
-        </form>
+            <input
+              type="checkbox"
+              id="savedMnemonicCheckbox"
+              checked={hasSaved}
+              onChange={(e) => setHasSaved(e.target.checked)}
+            />
+            <label
+              htmlFor="savedMnemonicCheckbox"
+              style={{
+                marginLeft: '0.5rem',
+                color: '#ffffff',
+                fontSize: '0.9rem',
+              }}
+            >
+              I’ve saved my mnemonic
+            </label>
+          </div>
+        )}
+
+        {/* ── Single Button (Generate ↔ Continue) ───────────────────────────── */}
+        <button
+          type="button"
+          className={styles.loginButton}
+          onClick={buttonAction}
+          disabled={buttonDisabled}
+          style={{
+            opacity: buttonDisabled ? 0.6 : 1,
+            cursor: buttonDisabled ? 'not-allowed' : 'pointer',
+            transition: 'opacity 150ms ease-in-out',
+          }}
+        >
+          <span className={fadeClass}>{buttonLabel}</span>
+        </button>
       </div>
     </div>
   );
 }
+
