@@ -1,0 +1,66 @@
+.wrapper {
+  position: relative;
+  margin-right: 8px; /* space before send button */
+}
+
+.toggleButton {
+  background: transparent;
+  border: none;
+  color: #e5eaff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.arrow {
+  margin-left: 4px;
+  font-size: 0.7em;
+}
+
+.dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: #2d2f36;
+  border-radius: 4px;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+.modeSwitch {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.modeSwitch button {
+  flex: 1;
+  background: transparent;
+  border: 1px solid #555;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: #ccc;
+}
+
+.modeSwitch .active {
+  background: #4a90e2;
+  color: #fff;
+  border-color: #4a90e2;
+}
+
+.modelList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.modelList li {
+  padding: 4px 8px;
+  cursor: pointer;
+  color: #ccc;
+}
+
+.modelList .active {
+  background: #4a90e2;
+  color: #fff;
+}

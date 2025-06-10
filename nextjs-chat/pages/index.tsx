@@ -6,6 +6,7 @@ import styles from '../styles/Home.module.css';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import SearchList from '../components/SearchList';
+import ModelMenu, { Mode } from '../components/ModelMenu';
 import Image from 'next/image';
 import {
   listConversations,
@@ -36,11 +37,13 @@ export default function Home() {
 	const newlineCount = (userMessage.match(/\n/g) || []).length;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
+  const [model, setModel] = useState<string>('deepseek');
+  const [mode, setMode] = useState<Mode>('proxy');
 
   // Initialize accessToken from localStorage
   const [accessToken, setAccessToken] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
+      console.log(localStorage.getItem('accessToken'));
       return localStorage.getItem('accessToken');
     }
     return null;
@@ -498,6 +501,13 @@ export default function Home() {
 										}}
 									/>
 								</div>
+                <ModelMenu
+                  models={['deepseek', 'ollama', 'mistral']}
+                  currentModel={model}
+                  onModelChange={setModel}
+                  currentMode={mode}
+                  onModeChange={setMode}
+                />
 								<button
 									className="btn"
 									onClick={sendMessage}

@@ -187,6 +187,26 @@ def CreateConversation(request):
 			return Response(status=status.HTTP_400_BAD_REQUEST)
 	return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def RenameConversation(request, conversation_id):
+    try:
+        conv = NymConversation.objects.get(id=conversation_id, user=request.user)
+    except NymConversation.DoesNotExist:
+        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    new_name = request.data.get('name')
+    if not new_name:
+        return Response({"detail": "Name is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    conv.name = new_name
+    conv.save()
+
+    serializer = ConversationSerializer(conv)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def GetUserConversation(request):
