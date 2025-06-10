@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.permissions import AllowAny
 from .erros import print_error
 from rest_framework_simplejwt.tokens import RefreshToken
-from .utils import getBotResponse, ValidadeInputs, conversationExists, decryptMessage
+from .utils import getBotResponse, ValidadeInputs, conversationExists, decryptMessage, getConversationName
 from .permissions import isNymAdmin
 from mnemonic import Mnemonic
 import hashlib
@@ -206,6 +206,25 @@ def RenameConversation(request, conversation_id):
     serializer = ConversationSerializer(conv)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def NameConversation(request, conversation_id):
+    # 1) load the conversation into `conv`
+    try:
+        conv = NymConversation.objects.get(id=conversation_id, user=request.user)
+    except NymConversation.DoesNotExist:
+        return Response({"detail":"Not found"}, status=404)
+
+    # 2) generate the title
+    title = getConversationName(conversation_id)
+    if not title:
+        return Response({"detail":"Could not generate name"}, status=502)
+
+    conv.name = title
+    conv.save()
+
+    serializer = ConversationSerializer(conv)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

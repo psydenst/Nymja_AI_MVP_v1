@@ -18,6 +18,7 @@ urlpatterns = [
     path('conversations/', views.GetUserConversation, name='list_conversations'),
     path('conversations/create/', views.CreateConversation, name='create_conversation'),
     path('conversations/<uuid:conversation_id>/delete/', views.DeleteConversation, name='delete_conversation'),
+    path('conversations/<uuid:conversation_id>/name/', views.NameConversation, name='name_conversation'),
     path('conversations/<uuid:conversation_id>/rename/', views.RenameConversation, name='rename_conversation'),
     # Messages #
     path('conversations/<uuid:conversation_id>/messages/', views.GetConversationMessages, name='list_messages'),

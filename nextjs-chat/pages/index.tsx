@@ -39,6 +39,7 @@ export default function Home() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [model, setModel] = useState<string>('deepseek');
   const [mode, setMode] = useState<Mode>('proxy');
+  const [justCreatedConvId, setJustCreatedConvId] = useState<string|null>(null);
 
   // Initialize accessToken from localStorage
   const [accessToken, setAccessToken] = useState<string | null>(() => {
@@ -175,118 +176,162 @@ export default function Home() {
     setInputBarHeight(newHeight)
   }
 
-	const sendMessage = async () => {
-		if (userMessage.trim() === '' || isSending) return;
-		
-		setIsSending(true);
-		
-		// Save the current message and clear the input immediately.
-		const messageToSend = userMessage;
-		// Reset to null the textarea value
-		setUserMessage('');
-		// Reset input_bar to default size
-		setInputBarHeight('6%');
-		const conversationId = localStorage.getItem('conversationId');
-		if (!conversationId) {
-			console.error("No conversation id found. Make sure to create a conversation first.");
-			setIsSending(false);
-			return;
-		}
-		
-		try {
-			// Send the user's message.
-			const response = await fetch(
-				`/api/conversations/${conversationId}/messages/send/`,
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-					},
-					body: JSON.stringify({ text: messageToSend }),
-					credentials: 'include',
-				}
-			);
-		
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.detail || 'Error sending message');
-			}
-		
-			// Assume the returned data includes the user's message ID.
-			const userMessageData = await response.json();
-			// console.log('User message sent successfully:', userMessageData);
-		
-			// Update state: add the user's message.
-			setConversations((prevConversations) =>
-				prevConversations.map((conv, idx) => {
-					if (idx === currentConversationIndex) {
-						return {
-							...conv,
-							messages: [
-								...(conv.messages || []),
-								{ id: userMessageData.id, text: messageToSend, sender: 'user' },
-							],
-						};
-					}
-					return conv;
-				})
-			);
-		
-			// Immediately add a pending bot message placeholder.
-			const pendingBotMessageId = "pending_" + Date.now();
-			setConversations((prevConversations) =>
-				prevConversations.map((conv, idx) => {
-					if (idx === currentConversationIndex) {
-						return {
-							...conv,
-							messages: [
-								...(conv.messages || []),
-								{ id: pendingBotMessageId, text: "...", sender: 'bot' },
-							],
-						};
-					}
-					return conv;
-				})
-			);
-		
-			// Call the bot response endpoint using the user's message ID.
-			const token = localStorage.getItem('accessToken');
-			const botResponseData = await getBotResponse(userMessageData.id, token);
-		// 	console.log("Bot response received:", botResponseData);
-		
-			// Update state: replace the pending bot message with the actual bot response.
-			setConversations((prevConversations) =>
-				prevConversations.map((conv, idx) => {
-					if (idx === currentConversationIndex) {
-						return {
-							...conv,
-							messages: conv.messages.map((msg) =>
-								msg.id === pendingBotMessageId ? { ...msg, text: botResponseData.text } : msg
-							),
-						};
-					}
-					return conv;
-				})
-			);
-		
-		} catch (error) {
-			console.error('Error sending message to backend:', error);
-		} finally {
-			setIsSending(false);
-		}
-		
-		setTimeout(() => {
-			if (lastMessageRef.current) {
-				lastMessageRef.current.scrollIntoView({ behavior: 'smooth' });
-			}
-		}, 100);
-	};
+  const sendMessage = async () => {
+    if (userMessage.trim() === '' || isSending) return;
+    setIsSending(true);
 
-  // Function to show the banner for new conversation
-  const reload_page = () => {
-    setShowBanner(true);
+    // 1️⃣ Grab and clear the input
+    const messageToSend = userMessage;
+    setUserMessage('');
+    setInputBarHeight('6%');
+
+    const conversationId = localStorage.getItem('conversationId');
+    if (!conversationId) {
+      console.error("No conversation id found. Make sure to create a conversation first.");
+      setIsSending(false);
+      return;
+    }
+
+    try {
+      // 2️⃣ Send the user's message
+      const userRes = await fetch(
+        `/api/conversations/${conversationId}/messages/send/`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ text: messageToSend }),
+          credentials: 'include',
+        }
+      );
+      if (!userRes.ok) {
+        const err = await userRes.json();
+        throw new Error(err.detail || 'Error sending message');
+      }
+      const userData = await userRes.json();
+
+      // 3️⃣ Add the user message to state
+      setConversations(prev =>
+        prev.map((conv, idx) =>
+          idx === currentConversationIndex
+            ? {
+                ...conv,
+                messages: [
+                  ...(conv.messages || []),
+                  { id: userData.id, text: messageToSend, sender: 'user' },
+                ],
+              }
+            : conv
+        )
+      );
+
+      // 4️⃣ Insert a placeholder for bot response
+      const placeholderId = `pending_${Date.now()}`;
+      setConversations(prev =>
+        prev.map((conv, idx) =>
+          idx === currentConversationIndex
+            ? {
+                ...conv,
+                messages: [
+                  ...(conv.messages || []),
+                  { id: placeholderId, text: '...', sender: 'bot' },
+                ],
+              }
+            : conv
+        )
+      );
+
+      // 5️⃣ Call bot-response
+      const botData = await getBotResponse(userData.id, accessToken!);
+
+      // 6️⃣ Replace placeholder with real bot text
+      setConversations(prev =>
+        prev.map((conv, idx) =>
+          idx === currentConversationIndex
+            ? {
+                ...conv,
+                messages: conv.messages.map(msg =>
+                  msg.id === placeholderId
+                    ? { ...msg, text: botData.text }
+                    : msg
+                ),
+              }
+            : conv
+        )
+      );
+
+      // 7️⃣ If we just created this conversation, name it
+      if (justCreatedConvId === conversationId) {
+        try {
+          const nameRes = await fetch(
+            `/api/conversations/${conversationId}/name/`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({}), // empty body is fine
+            }
+          );
+          if (nameRes.ok) {
+            const updated = await nameRes.json();
+            setConversations(prev =>
+              prev.map(c =>
+                c.id === conversationId ? { ...c, name: updated.name } : c
+              )
+            );
+          } else {
+            console.warn('NameConversation failed', await nameRes.text());
+          }
+        } catch (e) {
+          console.error('Error naming conversation', e);
+        } finally {
+          setJustCreatedConvId(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error in sendMessage:', error);
+    } finally {
+      setIsSending(false);
+      // scroll to bottom
+      setTimeout(() => {
+        lastMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+    }
   };
+
+  // Function to create New Conversation
+  const startNewConversation = async () => {
+      if (!accessToken) return;
+
+      const defaultName = `Conversation ${conversations.length + 1}`;
+      try {
+        const res = await fetch('/api/conversations/create/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ name: defaultName }),
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error('Failed to create conversation');
+        const newConv = await res.json();
+
+        // 1️⃣ add it to state and select it
+        setConversations(prev => [{ ...newConv, messages: [] }, ...prev]);
+        setCurrentConversationIndex(0);
+        localStorage.setItem('conversationId', newConv.id);
+
+        // 2️⃣ mark it so we’ll know to rename later
+        setJustCreatedConvId(newConv.id);
+      } catch (e) {
+        console.error(e);
+      }
+    };
 
   // Function to confirm the creation of a new conversation
 	const createConversation = async () => {
@@ -378,7 +423,7 @@ export default function Home() {
             </div>
             <div className={styles.cover_container}>
               <button
-                onClick={reload_page}
+                onClick={startNewConversation}
                 className={styles.addButton}
               >
                 <img

@@ -5,7 +5,7 @@ from .models import NymConversation, NymMessage
 from rest_framework import status
 import os
 import requests
-
+import re
 
 def getBotResponse(user_message, conversation_id):
 
@@ -52,6 +52,75 @@ def getBotResponse(user_message, conversation_id):
         return None
 
     return response.json()['choices'][0]['message']['content']
+
+def getConversationName(conversation_id):
+    """
+    Uses the exact same OpenRouter payload as getBotResponse, but:
+    - Only feeds the FIRST user message
+    - Asks the model: "Reply ONLY with a plain title under 100 characters."
+    - Strips markdown/prefixes
+    - Truncates to 100 chars if needed
+    """
+    api_key = settings.OPENROUTER_API_KEY
+    if not api_key:
+        raise RuntimeError("OPENROUTER_API_KEY not set in settings")
+
+    api_url = "https://openrouter.ai/api/v1/chat/completions"
+
+    # 1) Fetch only the very first user message
+    msgs = list(
+        NymMessage.objects
+            .filter(conversation=conversation_id)
+            .order_by('created_at')[:1]
+    )
+    if not msgs or msgs[0].sender != 'user':
+        return None
+
+    chat_history = [{
+        "role": "user",
+        "content": msgs[0].decrypt_text()
+    }, {
+        "role": "user",
+        "content": (
+            "Please reply with ONLY a single-line, plain-text title "
+            "(no markdown, no labels like “Title:” or “Answer:”), "
+            "and make it at most 50 characters long."
+        )
+    }]
+
+    payload = {
+        "model": "deepseek/deepseek-r1:free",
+        "messages": chat_history,
+        "temperature": 0.7
+    }
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        resp = requests.post(api_url, headers=headers, json=payload, timeout=15)
+        resp.raise_for_status()
+        raw = resp.json()["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        print("Error naming conv:", e)
+        return None
+
+    # 2) Clean out common markdown and prefixes
+    title = raw
+    # remove markdown emphasis
+    title = re.sub(r"(\*\*|\*|__|`)", "", title)
+    # drop any "Title:" or "Answer:" prefix
+    title = re.sub(r'^(Title:|Answer:)\s*', '', title, flags=re.IGNORECASE).strip()
+    # remove any trailing newlines or extraneous text after first line
+    title = title.splitlines()[0].strip()
+
+    # 3) Enforce 100-character limit
+    if len(title) > 50:
+        title = title[:47].rstrip() + "..."
+
+    return title
+
 
 ### validate user message ###
 
