@@ -102,7 +102,7 @@ export default function Login() {
               </label>
             </div>
             <div className="d-flex w-100 flex-row align-items-center justify-content-around">
-              <a href="#" className={styles.forgotPassword}>
+              <a href="/change-credentials" className={styles.forgotPassword}>
                 Forgot Password?
               </a>
               <a href="/register" className={styles.forgotPassword}>

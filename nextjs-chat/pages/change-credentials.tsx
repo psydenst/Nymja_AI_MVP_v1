@@ -1,4 +1,4 @@
-// nextjs-chat/pages/register-credentials.tsx
+// pages/change-credentials.tsx
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
@@ -6,29 +6,22 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../styles/Login.module.css';
 import { useRouter } from 'next/router';
 
-export default function RegisterStep2() {
+export default function ChangeCredentials() {
   const router = useRouter();
-  const { mnemonic } = router.query as { mnemonic?: string };
 
-  // If mnemonic is missing (e.g. user navigated directly), redirect back to Step 1
-/*  useEffect(() => {
-    if (!mnemonic) {
-      router.replace('/register');
-    }
-  }, [mnemonic, router]); */
-
-  // State for username / password / confirm password
+  // State for mnemonic, username, password & confirm
+  const [mnemonic, setMnemonic] = useState<string>('');
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
 
-  // Validation errors & success message
+  // Validation & feedback
   const [passwordError, setPasswordError] = useState<string>('');
   const [submitError, setSubmitError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
 
-  // Validate that password matches and has at least 8 chars
-  const validatePasswords = () => {
+  // Ensure passwords match & length ≥8
+  useEffect(() => {
     if (password && confirmPassword) {
       if (password !== confirmPassword) {
         setPasswordError('Passwords do not match');
@@ -40,65 +33,45 @@ export default function RegisterStep2() {
     } else {
       setPasswordError('');
     }
-  };
-
-  useEffect(() => {
-    validatePasswords();
   }, [password, confirmPassword]);
 
-  // Submit { username, password, mnemonic_phrase } to POST /api/auth/register/
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    // If there is already a validation error, do not proceed
     if (passwordError) return;
-
-    // Ensure we still have a valid mnemonic
-    if (!mnemonic) {
-      setSubmitError('Mnemonic is missing. Please go back and generate a new one.');
+    if (!mnemonic || !username || !password) {
+      setSubmitError('All fields are required');
       return;
     }
 
     try {
-      const response = await fetch('/api/auth/register/', {
+      const res = await fetch('/api/auth/change-credentials/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username,
-          password,
           mnemonic_phrase: mnemonic,
+          username,
+          new_password: password,
         }),
       });
 
-      if (response.ok) {
-        setSuccessMessage('Registration successful! Redirecting to login...');
-        // Clear fields
+      if (res.ok) {
+        setSuccessMessage('Credentials changed! Redirecting to login…');
+        setSubmitError('');
+        // clear fields
+        setMnemonic('');
         setUsername('');
         setPassword('');
         setConfirmPassword('');
-        // After 2 seconds, navigate to /login
-        setTimeout(() => {
-          router.push('/login');
-        }, 2000);
+        setTimeout(() => router.push('/login'), 2000);
       } else {
-        const data = await response.json();
-        // The backend might return { username: [...], mnemonic_phrase: [...] } or { detail: "..." }
-        if (data.username) {
-          setSubmitError(data.username.join(' '));
-        } else if (data.mnemonic_phrase) {
-          setSubmitError(data.mnemonic_phrase.join(' '));
-        } else if (data.detail) {
-          setSubmitError(data.detail);
-        } else {
-          setSubmitError('Registration failed');
-        }
+        const data = await res.json();
+        setSubmitError(data.detail || 'Change failed');
       }
-    } catch (err) {
+    } catch {
       setSubmitError('Network error. Please try again.');
     }
   };
 
-  // Determine if form is invalid (missing fields or password error)
   const isFormInvalid =
     !mnemonic ||
     !username ||
@@ -109,20 +82,31 @@ export default function RegisterStep2() {
   return (
     <div className={styles.page}>
       <Head>
-        <title>Step 2: Username & Password – Register</title>
+        <title>Change Credentials</title>
         <link rel="icon" href="/favicon_nym.svg" />
       </Head>
 
       <div className={styles.loginBox}>
-        <h1 className={styles.title}>Step 2: Username & Password</h1>
+        <h1 className={styles.title}>Change Credentials</h1>
 
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}>
+          {/* Mnemonic Input */}
+          <div className="form-group mb-3">
+            <textarea
+              id="mnemonic"
+              className={styles.inputField}
+              placeholder="Place your 24 word mnemonic"
+              value={mnemonic}
+              rows={4}
+              onChange={(e) => setMnemonic(e.target.value)}
+              required
+              style={{ resize: 'none' }}
+            />
+          </div>
+
           {/* Username Input */}
           <div className="form-group mb-3">
-            <label htmlFor="username" className="form-label">
-            </label>
             <input
-              id="username"
               type="text"
               placeholder="Username"
               className={styles.inputField}
@@ -134,10 +118,7 @@ export default function RegisterStep2() {
 
           {/* Password Input */}
           <div className="form-group mb-3">
-            <label htmlFor="password" className="form-label">
-            </label>
             <input
-              id="password"
               type="password"
               placeholder="Password"
               className={styles.inputField}
@@ -149,10 +130,7 @@ export default function RegisterStep2() {
 
           {/* Confirm Password Input */}
           <div className="form-group mb-2">
-            <label htmlFor="confirmPassword" className="form-label">
-            </label>
             <input
-              id="confirmPassword"
               type="password"
               placeholder="Confirm Password"
               className={styles.inputField}
@@ -161,37 +139,33 @@ export default function RegisterStep2() {
               required
             />
           </div>
+          {/* Login redirect */}
           <div className="text-end mb-2">
             <a href="/login" className={styles.forgotPassword}>
               Back to Login
             </a>
           </div>
-          {/* Display password validation error, if any */}
+          {/* Validation & errors */}
           {passwordError && (
             <div className="mb-3" style={{ color: '#B33030' }}>
               {passwordError}
             </div>
           )}
-
-          {/* Display submission error (e.g. username taken, mnemonic used) */}
           {submitError && (
             <div className="mb-3" style={{ color: '#B33030' }}>
               {submitError}
             </div>
           )}
-
-          {/* Display success message if registration succeeded */}
           {successMessage && (
             <div className="mb-3 text-success">{successMessage}</div>
           )}
 
-          {/* Submit Button */}
           <button
             type="submit"
             className={styles.loginButton}
             disabled={isFormInvalid}
           >
-            REGISTER
+            CONFIRM
           </button>
         </form>
       </div>

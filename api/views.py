@@ -13,6 +13,7 @@ from .utils import getBotResponse, ValidadeInputs, conversationExists, decryptMe
 from .permissions import isNymAdmin
 from mnemonic import Mnemonic
 import hashlib
+
 ########## ADMIN ROUTES ##########
 
 @api_view(['GET'])
@@ -152,8 +153,61 @@ def CompleteRegister(request):
     serialized = UserSerializer(user)
     return Response(serialized.data, status=status.HTTP_201_CREATED)
 
-########## CONVERSATION ROUTES ##########
+# api/views.py
 
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def ChangeCredentials(request):
+    """
+    POST { mnemonic_phrase, username, new_password }
+    Finds the user by mnemonic_hash, then:
+      - If username differs, ensures it's unique and updates it
+      - If new_password differs from old, updates it
+    Returns the updated user (id, username, etc).
+    """
+    data = request.data
+    mnemonic = data.get('mnemonic_phrase')
+    new_username = data.get('username')
+    new_password = data.get('new_password')
+
+    # 1) Basic presence check
+    if not (mnemonic and new_username and new_password):
+        return Response(
+            {"detail": "mnemonic_phrase, username and new_password are required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # 2) Lookup by mnemonic_hash
+    hashed = hashlib.sha256(mnemonic.encode('utf-8')).hexdigest()
+    try:
+        user = NymUser.objects.get(mnemonic_hash=hashed)
+    except NymUser.DoesNotExist:
+        return Response(
+            {"detail": "Invalid mnemonic_phrase."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # 3) Change username if different
+    if new_username != user.username:
+        if NymUser.objects.filter(username=new_username).exclude(id=user.id).exists():
+            return Response(
+                {"detail": "Username already taken."},
+                status=status.HTTP_409_CONFLICT
+            )
+        user.username = new_username
+
+    # 4) Change password if different
+    if new_password and not user.check_password(new_password):
+        user.set_password(new_password)
+
+    # 5) Save and return
+    user.save()
+    serialized = UserSerializer(user)
+    return Response(serialized.data, status=status.HTTP_200_OK)
+
+
+########## CONVERSATION ROUTES ##########
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

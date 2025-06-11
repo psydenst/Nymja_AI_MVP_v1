@@ -187,7 +187,11 @@ export default function RegisterStep1() {
             </label>
           </div>
         )}
-
+        <div className="text-end mb-2">
+          <a href="/login" className={styles.forgotPassword}>
+            Back to Login
+          </a>
+        </div>
         {/* ── Single Button (Generate ↔ Continue) ───────────────────────────── */}
         <button
           type="button"

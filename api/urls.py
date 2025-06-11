@@ -7,6 +7,7 @@ urlpatterns = [
     path('auth/mnemonic/', views.GenerateMnemonic, name='mnemonic'),
     path('auth/register/', views.CompleteRegister, name='register'),
     path('auth/login/', views.LoginNymUser, name='login'),
+    path('auth/change-credentials/', views.ChangeCredentials, name='change_credentials'),
     path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 

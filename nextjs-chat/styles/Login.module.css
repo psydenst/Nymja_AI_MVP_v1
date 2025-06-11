@@ -129,8 +129,13 @@
   }
 
   @media (max-width: 768px) {
+  
+    .page {
+      height: 100dvh;
+    }
+
     .loginBox {
-      width: 90%;
+      width: 80%;
     }
   }
   
