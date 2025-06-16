@@ -361,3 +361,86 @@ export async function deleteConversation(
     throw error;
   }
 }
+
+
+/*****************************************/
+/*****************************************/
+// CHAT CONTAINER STYLING HELPER FUNCTIONS
+/*****************************************/
+/*****************************************/
+
+/**
+ * Checks if the current device is mobile based on screen width
+ * @param breakpoint - The breakpoint width to consider as mobile (default: 768px)
+ * @returns boolean indicating if device is mobile
+ */
+export const isMobileDevice = (breakpoint: number = 768): boolean => {
+  return window.innerWidth <= breakpoint;
+};
+
+/**
+ * Calculates the appropriate width for chat messages based on device type and sender
+ * @param sender - The message sender ('user' or 'bot')
+ * @param mobileBreakpoint - The breakpoint width to consider as mobile (default: 768px)
+ * @returns string representing the width percentage
+ */
+export const getMessageWidth = (sender: string, mobileBreakpoint: number = 768): string => {
+  const isMobile = isMobileDevice(mobileBreakpoint);
+  
+  if (isMobile) {
+    return sender === 'user' ? '70%' : '95%';
+  }
+  
+  // Desktop: both user and bot 70%
+  return '70%';
+};
+
+/**
+ * Gets the complete style object for message containers
+ * @param sender - The message sender ('user' or 'bot')
+ * @param mobileBreakpoint - The breakpoint width to consider as mobile (default: 768px)
+ * @returns object with width and maxWidth properties
+ */
+export const getMessageContainerStyle = (sender: string, mobileBreakpoint: number = 768) => {
+  const isMobile = isMobileDevice(mobileBreakpoint);
+  
+  // Calculate max width based on device and sender
+  let maxWidth: string;
+  if (isMobile) {
+    maxWidth = sender === 'user' ? '70%' : '95%';
+  } else {
+    maxWidth = '70%';
+  }
+  
+  return {
+    maxWidth,
+    width: 'auto' // Let content determine width up to max
+  };
+};
+
+/**
+ * Gets the complete style object for message wrapper containers (the flex container)
+ * @param sender - The message sender ('user' or 'bot')
+ * @returns object with display, justifyContent, and width properties
+ */
+export const getMessageWrapperStyle = (sender: string) => {
+  const baseStyle = {
+    display: 'flex',
+    width: '100%',
+    margin: '0.5rem 0'
+  };
+
+  if (sender === 'user') {
+    return {
+      ...baseStyle,
+      justifyContent: 'flex-end'
+    };
+  } else {
+    return {
+      ...baseStyle,
+      justifyContent: 'flex-start'
+    };
+  }
+};
+
+

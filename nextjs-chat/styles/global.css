@@ -1,3 +1,9 @@
+/* KaTeX styles */
+@import 'katex/dist/katex.min.css';
+
+/* Code highlighting (choose any style) */
+@import 'highlight.js/styles/github.css';
+
 html,
 body {
   padding: 0;

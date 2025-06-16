@@ -3,8 +3,9 @@ all:
 	@docker compose up -d
 
 re:
-	@printf "Rebuild configuration ${name}...\n"
-	@docker compose up -d --build
+	@printf "Rebuild configuration $(name)...\n"
+	@docker compose build --no-cache
+	@docker compose up -d
 
 down:
 	@printf "Stopping configuration ${name}...\n"

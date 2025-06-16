@@ -1,7 +1,10 @@
 import Head from 'next/head';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import remarkGfm    from 'remark-gfm';
+import remarkMath   from 'remark-math';
+import rehypeKatex  from 'rehype-katex';
+import rehypeHighlight from 'rehype-highlight';
 import styles from '../styles/Home.module.css';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
@@ -19,6 +22,8 @@ import {
   saveMessage,         // function to save a message
   logoutUser,          // function to log out user
 	createDefaultConversation, // function to create a new conversation if none exists
+  getMessageContainerStyle,
+  getMessageWrapperStyle,
 } from '../utils/utils';
 
 export default function Home() {
@@ -448,45 +453,148 @@ export default function Home() {
                   }}
                 >
                   {currentMessages.map((message, index) => {
-                    const sender = markMessageSender(message);
-                    return (
-                      <div
-                        key={index}
-                        className={`my-2 d-flex ${
-                          sender === 'user'
-                            ? 'justify-content-end'
-                            : 'justify-content-start'
-                        }`}
-                        ref={index === currentMessages.length - 1 ? lastMessageRef : null}
+                    const sender = markMessageSender(message)
+                    console.log('Message:', message.text.substring(0, 20), 'Sender:', sender); // Debug line
+
+            
+                return (
+                    <div
+                      key={index}
+                      className="my-2"
+                      style={getMessageWrapperStyle(sender)}
+                      ref={
+                        index === currentMessages.length - 1
+                          ? lastMessageRef
+                          : null
+                      }
+                    >
+                      <div 
+                        className={`p-2 rounded ${sender === 'user' ? 'user-message' : 'bot-message'}`}
+                        style={getMessageContainerStyle(sender)}
                       >
-                        <div
-                          className="p-2 rounded"
-                          style={{
-                            maxWidth: '70%',
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-word',
-                            overflowWrap: 'break-word',
-                            backgroundColor:
-                              sender === 'user'
-                                ? 'rgba(72, 82, 96, 0.79)'
-                                : 'rgba(255, 255, 255, 0)',
-                            color: '#E5EAFF',
-                          }}
-                        >
-													{message.text === "..." ? (
-														<span className={styles.animatedDots}>
-															<span>.</span>
-															<span>.</span>
-															<span>.</span>
-														</span>
-													) : (
-														<ReactMarkdown>{message.text}</ReactMarkdown>													)}
+                        {message.text === '...' ? (
+                          <div
+                            style={{
+                              backgroundColor:
+                                sender === 'user'
+                                  ? 'rgba(72, 82, 96, 0.79)'
+                                  : 'rgba(255, 255, 255, 0)',
+                              color: '#E5EAFF',
+                              padding: '8px 12px',
+                              borderRadius: '4px',
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                            }}
+                          >
+                            <span className={styles.animatedDots}>
+                              <span>.</span>
+                              <span>.</span>
+                              <span>.</span>
+                            </span>
+                          </div>                   
+                          ) : (
+                            <div
+                              className={styles.markdown_body}
+                              style={{
+                                backgroundColor:
+                                  sender === 'user'
+                                    ? 'rgba(72, 82, 96, 0.79)'
+                                    : 'rgba(255, 255, 255, 0)',
+                                color: '#E5EAFF',
+                                padding: '8px 12px',
+                                borderRadius: '4px',
+                              }}
+                            >
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm, remarkMath]}
+                                rehypePlugins={[rehypeKatex, rehypeHighlight]}
+                                components={{
+                                  code({ node, inline, className, children, ...props }: any) {
+                                    return inline ? (
+                                      <code 
+                                        className={className} 
+                                        style={{
+                                          backgroundColor: '#000',
+                                          color: '#fff',
+                                          padding: '0.2em 0.4em',
+                                          borderRadius: '3px',
+                                          fontFamily: 'Menlo, Consolas, monospace',
+                                        }}
+                                        {...props}
+                                      >
+                                        {children}
+                                      </code>
+                                    ) : (
+                                      <pre 
+                                        style={{
+                                          backgroundColor: '#000',
+                                          color: '#fff',
+                                          padding: '1em',
+                                          borderRadius: '4px',
+                                          overflowX: 'auto',
+                                          fontFamily: 'Menlo, Consolas, monospace',
+                                          margin: '8px 0',
+                                        }}
+                                        {...props}
+                                      >
+                                        <code className={className}>{children}</code>
+                                      </pre>
+                                    )
+                                  },
+                                  // Style math blocks
+                                  div({ className, children, ...props }: any) {
+                                    if (className?.includes('katex-display')) {
+                                      return (
+                                        <div
+                                          className={className}
+                                          style={{
+                                            backgroundColor: '#000',
+                                            color: '#fff',
+                                            padding: '1em',
+                                            borderRadius: '4px',
+                                            margin: '1em 0',
+                                          }}
+                                          {...props}
+                                        >
+                                          {children}
+                                        </div>
+                                      )
+                                    }
+                                    return <div className={className} {...props}>{children}</div>
+                                  },
+                                  // Style inline math
+                                  span({ className, children, ...props }: any) {
+                                    if (className?.includes('katex')) {
+                                      return (
+                                        <span
+                                          className={className}
+                                          style={{
+                                            backgroundColor: '#111',
+                                            color: '#fff',
+                                            padding: '0.1em 0.2em',
+                                            borderRadius: '3px',
+                                          }}
+                                          {...props}
+                                        >
+                                          {children}
+                                        </span>
+                                      )
+                                    }
+                                    return <span className={className} {...props}>{children}</span>
+                                  }
+                                }}
+                              >
+                                {message.text}
+                              </ReactMarkdown>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    );
+                    )
                   })}
                 </div>
-                <div
+              <div
                   className={styles.logo_container}
                   style={{
                     display: 'flex',

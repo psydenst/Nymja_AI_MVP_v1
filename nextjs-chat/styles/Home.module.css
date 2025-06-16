@@ -167,6 +167,49 @@
   overflow: hidden;
 }
 
+.markdown_body pre {
+  background-color: #000 !important;
+  width: 100% !important;
+  color: #fff !important;
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: Menlo, Consolas, monospace;
+}
+
+/* inline code (`…`) */
+.markdown_body code {
+  background-color: rgba(0, 0, 0, 1) !important;
+  color: #fff !important;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: Menlo, Consolas, monospace;
+}
+
+/* KaTeX block math */
+.markdown_body .katex-display {
+  background-color: #000 !important;
+  color: #fff !important;
+  padding: 1em;
+  border-radius: 4px;
+  margin: 1em 0;
+}
+
+/* KaTeX inline math */
+.markdown_body .katex {
+  background-color: #111 !important;
+  color: #fff !important;
+  padding: 0.1em 0.2em;
+  border-radius: 3px;
+}
+
+/* styles for chat_container Markdown */
+.markdown_body {
+  font-family: 'Merriweather', serif;
+  line-height: 1.6;
+}
+
+
 /* For browsers supporting WebKit scrollbar styling */
 .chat_container::-webkit-scrollbar {
   width: 6px; /* Adjust width as needed */
@@ -394,7 +437,6 @@
 
 /* Media Query for mobile/tablet */
 @media (max-width: 768px) {
-  /* (já existentes) */
 
   .sidebar {
     display: block;
@@ -498,13 +540,55 @@
     margin: 0 2.5vw 1rem;      /* centraliza com margens laterais pequenas */
   }
 
-  /* faz chat_container e input_bar acompanharem a largura do pai */
+  /* chat container inherits father size */
   .chat_container {
     width: 90% !important;
     height: 100% !important;
     background-color: rgba(217, 217, 217, 0);
   }
 
+  .markdown_body pre {
+    background-color: #000 !important;
+    color: #fff !important;
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: Menlo, Consolas, monospace;
+  }
+
+  /* inline code (`…`) */
+  .markdown_body code {
+    background-color: rgba(0, 0, 0, 1) !important;
+    color: #fff !important;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: Menlo, Consolas, monospace;
+  }
+
+  /* KaTeX block math */
+  .markdown_body .katex-display {
+    background-color: #000 !important;
+    color: #fff !important;
+    padding: 1em;
+    border-radius: 4px;
+    margin: 1em 0;
+  }
+
+  /* KaTeX inline math */
+  .markdown_body .katex {
+    background-color: #111 !important;
+    color: #fff !important;
+    padding: 0.1em 0.2em;
+    border-radius: 3px;
+  }
+
+  /* styles for chat_container Markdown */
+  .markdown_body {
+    font-family: 'Merriweather', serif;
+    line-height: 1.6;
+  }
+
+ 
   .input_bar {
     width: 90% !important;
   }

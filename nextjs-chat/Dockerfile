@@ -1,23 +1,30 @@
-# Use a imagem base do Node.js
-FROM node:18
+# Use Node.js 18 base image
+FROM node:18-alpine
 
-# Defina o diretório de trabalho
+# Set working directory
 WORKDIR /app
 
-# Copie os arquivos de dependência
-COPY package.json package-lock.json ./
+# Copy package files
+COPY package.json package-lock.json* ./
 
-# Instale as dependências
-RUN npm install
+# Clear any existing cache and install dependencies
+RUN npm cache clean --force && \
+    npm ci \
+    --prefer-offline \
+    --no-audit \
+    --fetch-retries=10 \
+    --fetch-retry-factor=3 \
+    --fetch-retry-mintimeout=20000 \
+    --fetch-retry-maxtimeout=120000
 
-# Copie o restante dos arquivos da aplicação
+# Copy application files
 COPY . .
 
-# Construa o aplicativo Next.js
+# Build the Next.js application
 RUN npm run build
 
-# Exponha a porta que o Next.js usa (3000)
+# Expose port
 EXPOSE 3000
 
-# Inicie o aplicativo
+# Start the application
 CMD ["npm", "start"]
