@@ -3,7 +3,7 @@
 
 /* Code highlighting (choose any style) */
 @import 'highlight.js/styles/github-dark.css';
-@import 'github-markdown-css/github-markdown-dark.css';
+@import "@primer/css/dist/markdown.css";
 
 html,
 body {

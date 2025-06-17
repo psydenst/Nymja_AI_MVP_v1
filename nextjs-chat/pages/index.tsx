@@ -454,7 +454,6 @@ export default function Home() {
                 >
                   {currentMessages.map((message, index) => {
                     const sender = markMessageSender(message)
-                    console.log('Message:', message.text.substring(0, 20), 'Sender:', sender); // Debug line
 
             
                 return (
@@ -495,7 +494,7 @@ export default function Home() {
                           </div>                   
                           ) : (
                             <div
-                              className={styles.markdown_body}
+                              className={`markdown-body ${styles.markdown_body}`} 
                               style={{
                                 backgroundColor:
                                   sender === 'user'

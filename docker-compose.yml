@@ -19,7 +19,6 @@ services:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY} 
     depends_on:
       - db
-      - ollama
     container_name: backend
     networks:
       - system
@@ -67,20 +66,7 @@ services:
     networks:
       - system
   
-  ollama:
-    build:
-      context: ./ollama
-      dockerfile: ./Dockerfile
-    container_name: ollama
-    entrypoint: /app/run_ollama.sh
-    ports:
-      - 11434:11434
-    pull_policy: always
-    tty: true
-    restart: always
-    networks:
-      - system
-
+  
 volumes:
   postgres_data:
   pgadmin_data:

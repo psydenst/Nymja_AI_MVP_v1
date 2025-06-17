@@ -167,6 +167,28 @@
   overflow: hidden;
 }
 
+
+/* Customizing Prime CSS */
+.markdown_body p,
+.markdown_body ul,
+.markdown_body ol,
+.markdown_body blockquote,
+.markdown_body table {
+  margin: 1em 0;
+}
+.markdown_body h1,
+.markdown_body h2,
+.markdown_body h3,
+.markdown_body h4,
+.markdown_body h5,
+.markdown_body h6 {
+  margin: 1.5em 0 0.5em;
+}
+.markdown_body li {
+  margin: 0.5em 0;
+}
+
+
 .markdown_body pre {
   background-color: #000 !important;
   width: 100% !important;
@@ -207,7 +229,8 @@
 .markdown_body {
   font-family: 'Merriweather', serif;
   line-height: 1.6;
-  font-size: 1.1rem !important;
+  padding: 0.5rem !important;
+  font-size: 1.05rem !important;
   text-align: justify;
   text-justify: inter-word;
 }
