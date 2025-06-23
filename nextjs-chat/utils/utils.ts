@@ -11,6 +11,15 @@ export interface ConversationData {
   messages: any[];
 }
 
+export interface BotMessage {
+  id: string
+  sender: 'user' | 'bot'
+  text: string
+  conversation: string
+  // …any other fields your serializer returns…
+}
+
+
 // fetch and return a list all user's conversations (id, created_at, name)
 export async function listConversations(userToken: string | null): Promise<any[]> {
   if (!userToken) {
@@ -207,9 +216,11 @@ export function markMessageSender(message: any): 'user' | 'bot' {
  * Calls the BotResponse endpoint for a given user message ID.
  * Assumes the endpoint is: GET /api/conversations/<message_id>/messages/response/
  */
+
 export async function getBotResponse(
   messageId: string,
-  userToken: string | null
+  userToken: string | null,
+  modelKey : string = 'deepseek'
 ): Promise<any> {
   if (!userToken) {
     throw new Error("User token is missing");
@@ -225,6 +236,9 @@ export async function getBotResponse(
           'Authorization': `Bearer ${userToken}`,
         },
         credentials: 'include',
+        body: JSON.stringify({
+        model: modelKey,
+        }),
       }
     );
 

@@ -9,6 +9,7 @@ import styles from '../styles/Home.module.css';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import SearchList from '../components/SearchList';
+import { MODEL_OPTIONS } from '../constants/ModelOptions'
 import ModelMenu, { Mode } from '../components/ModelMenu';
 import Image from 'next/image';
 import {
@@ -19,6 +20,7 @@ import {
   markMessageSender, // auxiliary function to mark sender
   fetchFullConversation, // imported to fetch conversation history
   getBotResponse,      // function for bot response
+  BotMessage,
   saveMessage,         // function to save a message
   logoutUser,          // function to log out user
 	createDefaultConversation, // function to create a new conversation if none exists
@@ -248,8 +250,9 @@ export default function Home() {
         )
       );
 
+    try {
       // 5️⃣ Call bot-response
-      const botData = await getBotResponse(userData.id, accessToken!);
+      const botData = await getBotResponse(userData.id, accessToken!, model);
 
       // 6️⃣ Replace placeholder with real bot text
       setConversations(prev =>
@@ -266,7 +269,27 @@ export default function Home() {
             : conv
         )
       );
-
+    } catch (err) {
+      console.error('Error getting bot response:', err)
+      // Update placeholder with error text
+      setConversations(prev =>
+        prev.map((conv, idx) =>
+          idx === currentConversationIndex
+            ? {
+                ...conv,
+                messages: conv.messages.map(msg =>
+                  msg.id === placeholderId
+                    ? 
+                    { ...msg, text: 'Error getting bot response.',
+                      isError: true,
+                    }
+                    : msg
+                ),
+              }
+            : conv
+        )
+      )
+    }
       // 7️⃣ If we just created this conversation, name it
       if (justCreatedConvId === conversationId) {
         try {
@@ -435,7 +458,7 @@ export default function Home() {
                   src="/add.png"
                   alt="Add"
                   style={{
-                    height: '2vw',
+                    height: '25px',
                     width: 'auto',
                     minHeight: '25px',
                     filter: 'invert(1)',
@@ -455,7 +478,6 @@ export default function Home() {
                   {currentMessages.map((message, index) => {
                     const sender = markMessageSender(message)
 
-            
                 return (
                     <div
                       key={index}
@@ -468,7 +490,7 @@ export default function Home() {
                       }
                     >
                       <div 
-                        className={`p-2 rounded ${sender === 'user' ? 'user-message' : 'bot-message'}`}
+                        className={`p-2 rounded ${sender === 'user' ? 'user-message' : 'bot-message'} ${message.isError ? 'text-danger' : ''}`}
                         style={getMessageContainerStyle(sender)}
                       >
                         {message.text === '...' ? (
@@ -494,13 +516,13 @@ export default function Home() {
                           </div>                   
                           ) : (
                             <div
-                              className={`markdown-body ${styles.markdown_body}`} 
+                              className={`markdown-body ${styles.markdown_body} ${message.isError ? 'text-danger' : ''}`} 
                               style={{
                                 backgroundColor:
                                   sender === 'user'
                                     ? 'rgba(72, 82, 96, 0.79)'
                                     : 'rgba(255, 255, 255, 0)',
-                                color: '#E5EAFF',
+                                ...(message.isError ? {} : {color: '#E5EAFF'}),
                                 padding: '8px 12px',
                                 borderRadius: '4px',
                               }}
@@ -654,8 +676,8 @@ export default function Home() {
 									/>
 								</div>
                 <ModelMenu
-                  models={['deepseek', 'ollama', 'mistral']}
-                  currentModel={model}
+                  models={MODEL_OPTIONS}
+                  initialModel={model}
                   onModelChange={setModel}
                   currentMode={mode}
                   onModeChange={setMode}

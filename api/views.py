@@ -5,6 +5,7 @@ from rest_framework import status
 from .serializers import MessageSerializer, UserSerializer, ConversationSerializer, RegisterSerializer
 from .models import NymUser, NymConversation, NymMessage
 from django.contrib.auth import authenticate
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.permissions import AllowAny
 from .erros import print_error
@@ -339,39 +340,65 @@ def SaveMessage(request, conversation_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def BotResponse(request, message_id):
-	if request.method == 'POST':
-		try:
-			message = NymMessage.objects.filter(id=message_id).first()
+    """
+    POST /api/conversations/<uuid:message_id>/messages/response/
+    Body JSON:
+      {
+        "model": "<one of your MODEL_MAP keys>"
+      }
+    """
+    try:
+        # 1) Fetch original message (404 if not found)
+        orig = get_object_or_404(NymMessage, id=message_id)
 
-			if not message:
-				return Response({"detail": "Message not found."}, status=status.HTTP_404_NOT_FOUND)
-			
-			message_decrypt = message.decrypt_text()
+        # 2) Decrypt its text
+        plaintext = orig.decrypt_text()
 
-			bot_response = getBotResponse(message_decrypt, message.conversation.id)
+        # 3) Pull the model key from the body (default to "deepseek")
+        model_key = request.data.get("model", "deepseek")
 
-			if not bot_response:
-				return Response({"detail": "Error getting bot response."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-			
-			message_body = {
-				"sender": "bot",
-				"text": bot_response,
-				"conversation": message.conversation.id
-			}
+        # 4) Get the bot response, validating the key
+        try:
+            bot_text = getBotResponse(
+                plaintext,
+                orig.conversation.id,
+                model_key=model_key
+            )
+        except ValueError as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-			message = MessageSerializer(data=message_body)
+        if not bot_text:
+            return Response(
+                {"detail": "Error getting bot response."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-			if message.is_valid():
-				message.save()
-				front = message.data
-				front['text'] = decryptMessage(message.data['id'])
-				return Response(front, status=status.HTTP_201_CREATED)
-			return Response({"detail": "Error creating message."}, status=status.HTTP_400_BAD_REQUEST)
+        # 5) Persist the new bot message
+        payload = {
+            "sender":       "bot",
+            "text":         bot_text,
+            "conversation": orig.conversation.id,
+        }
+        serializer = MessageSerializer(data=payload)
+        if not serializer.is_valid():
+            return Response(
+                {"detail": "Error creating message.", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-		except Exception as e:
-			print(e)
-			return Response(status=status.HTTP_417_EXPECTATION_FAILED)
+        saved = serializer.save()
 
+        # 6) Return the created message (with decrypted text if needed)
+        data = serializer.data
+        data["text"] = decryptMessage(saved.id)
+        return Response(data, status=status.HTTP_201_CREATED)
+
+    except Exception as exc:
+        print(exc)
+        return Response(status=status.HTTP_417_EXPECTATION_FAILED)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

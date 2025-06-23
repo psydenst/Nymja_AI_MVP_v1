@@ -101,19 +101,19 @@ const SearchList: React.FC<SearchListProps> = ({
     >
       {/* Search input */}
       <div
-        className={`${styles.search_sidebar} d-flex align-items-center justify-content-center opacity-100`}
+        className={`${styles.search_sidebar} d-flex align-items-center justify-content-start opacity-100`}
       >
-        <div className="d-flex flex-row justify-content-center align-items-center flex-start">
+        <div className="d-flex flex-row justify-content-between align-items-center">
           <img
             src="/search_white.png"
             alt="Search Icon"
+            className="ms-3"
             style={{
               width: '1vw',
               height: '1vw',
               minWidth: '15px',
               minHeight: '15px',
               objectFit: 'cover',
-              marginLeft: '1vw',
               opacity: 0.6,
             }}
           />
@@ -145,7 +145,7 @@ const SearchList: React.FC<SearchListProps> = ({
                   handleConversationClick(conversation.id, sortedIndex)
                 }
               >
-                <span className={styles.conversationName}>
+                <span className={`opacity-100 ${styles.conversationName}`}>
                   {conversation.name}
                 </span>
                 <img
@@ -171,9 +171,8 @@ const SearchList: React.FC<SearchListProps> = ({
       {/* ── Mobile‐only Logout Icon, same as index.tsx ───────────────────────── */}
       <div className={`d-block d-md-none mt-3`}>
         <div
-          className={styles.accordion}
+          className={styles.accordion_mobile}
           onClick={handleLogout}
-          style={{ display: 'inline-block' }}
         >
           <img
             src="/logout_nymja_ai.png"

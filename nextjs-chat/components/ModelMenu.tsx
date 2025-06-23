@@ -1,24 +1,42 @@
-import { useState } from 'react';
-import styles from '../styles/ModelMenu.module.css';
+// components/ModelMenu.tsx
 
-export type Mode = 'proxy' | 'mixnet';
+import { useState, useEffect } from 'react'
+import styles from '../styles/ModelMenu.module.css'
+
+export type Mode = 'proxy' | 'mixnet'
+
+export interface ModelOption {
+  key: string
+  label: string
+}
 
 interface ModelMenuProps {
-  models: string[];
-  currentModel: string;
-  onModelChange: (model: string) => void;
-  currentMode: Mode;
-  onModeChange: (mode: Mode) => void;
+  models: ModelOption[]              // now an array of { key, label }
+  initialModel: string               // which key to start on
+  onModelChange: (modelKey: string) => void
+  currentMode: Mode
+  onModeChange: (mode: Mode) => void
 }
 
 export default function ModelMenu({
   models,
-  currentModel,
+  initialModel,
   onModelChange,
   currentMode,
   onModeChange,
 }: ModelMenuProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
+  const [selectedModel, setSelectedModel] = useState<string>(initialModel)
+
+  // whenever we pick a new one, tell the parent
+  useEffect(() => {
+    onModelChange(selectedModel)
+  }, [selectedModel, onModelChange])
+
+  // helper to map key → label
+  const currentLabel =
+    models.find((m) => m.key === selectedModel)?.label ??
+    selectedModel
 
   return (
     <div className={styles.wrapper}>
@@ -26,7 +44,7 @@ export default function ModelMenu({
         className={styles.toggleButton}
         onClick={() => setOpen((o) => !o)}
       >
-        {currentModel} <span className={styles.arrow}>{open ? '▲' : '▼'}</span>
+        {currentLabel} <span className={styles.arrow}>{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
@@ -45,22 +63,25 @@ export default function ModelMenu({
               Mixnet
             </button>
           </div>
+
           <ul className={styles.modelList}>
-            {models.map((m) => (
+            {models.map(({ key, label }) => (
               <li
-                key={m}
-                className={m === currentModel ? styles.active : ''}
+                key={key}
+                className={key === selectedModel ? styles.active : ''}
                 onClick={() => {
-                  onModelChange(m);
-                  setOpen(false);
+                  setSelectedModel(key)
+                  setOpen(false)
                 }}
               >
-                {m}
+                {label}
               </li>
             ))}
           </ul>
         </div>
       )}
     </div>
-  );
+  )
 }
+
+

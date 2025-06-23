@@ -31,10 +31,22 @@ OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 SECRET_KEY = 'django-insecure-&a)z&5_pkttgv0wt6!-ymrsrfb99wac%$0u0$z1r5g1_@_1dil'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['ai.tupinymquim.com', 'localhost', '127.0.0.1', '85.239.55.77']
 
+
+# Open Router Models key
+MODEL_MAP = {
+    "deepseek":  "deepseek/deepseek-r1:free",
+    "mistral":   "mistralai/mistral-nemo:free",
+    "llama":     "meta-llama/llama-3.2-11b-vision-instruct:free",
+    "dolphin":   "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+    "deephermes":"nousresearch/deephermes-3-llama-3-8b-preview:free",
+    "qwen":      "qwen/qwq-32b:free",
+    "gemma":     "google/gemma-3-27b-it:free",
+    "kimi":      "moonshotai/kimi-vl-a3b-thinking:free",
+}
 
 # Application definition
 

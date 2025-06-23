@@ -1,6 +1,7 @@
 .wrapper {
   position: relative;
   margin-right: 8px; /* space before send button */
+  font-family: 'Merriweather', serif;
 }
 
 .toggleButton {
