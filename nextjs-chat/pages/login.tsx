@@ -105,12 +105,6 @@ export default function Login() {
           />
           </div>
           <div className="d-flex flex-column justify-content-between align-items-start">
-            <div>
-              <input type="checkbox" id="rememberMe" />
-              <label htmlFor="rememberMe" className="ms-2">
-                Remember me
-              </label>
-            </div>
             <div className="d-flex w-100 flex-row align-items-center justify-content-around">
               <a href="/change-credentials" className={styles.forgotPassword}>
                 Forgot Password?
