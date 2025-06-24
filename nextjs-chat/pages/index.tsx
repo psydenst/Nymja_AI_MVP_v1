@@ -312,6 +312,21 @@ export default function Home() {
         )
       );
     } catch (err: any) {
+      if (err.name === 'AbortError') {
+        // ⚠️ User clicked cancel — remove the “...” placeholder entirely
+        setConversations(prev =>
+          prev.map((conv, idx) =>
+            idx === currentConversationIndex
+              ? {
+                  ...conv,
+                  messages: conv.messages.filter(msg => msg.id !== placeholderId),
+                }
+              : conv
+          )
+        );
+        // early return so we don’t run your general-error logic below
+        return;
+      }
       console.error('Error getting bot response:', err)
       // Update placeholder with error text
       setConversations(prev =>
@@ -737,12 +752,21 @@ export default function Home() {
 										className={`${styles.transparent_input} flex-grow-1 d-flex align-items-center`}
 										value={userMessage}
 										onChange={handleInputChange}
-										onKeyDown={(e) => {
-											if (e.key === 'Enter' && !e.shiftKey) {
-												e.preventDefault(); // Prevents newline insertion
-												sendMessage();
-											}
-										}}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        // Detect touch‐first (mobile/tablet) vs mouse‐first (desktop)
+                        const isTouchDevice =
+                          typeof window !== 'undefined' &&
+                          window.matchMedia('(pointer: coarse)').matches;
+
+                        if (!isTouchDevice) {
+                          // Desktop: prevent newline and send immediately
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                        // Mobile: allow newline; require tapping the send button to submit
+                      }
+                    }}
 										onFocus={() => setIsFocused(true)}
 										onBlur={() => setIsFocused(false)}
 										style={{
