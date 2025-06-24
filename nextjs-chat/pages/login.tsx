@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router'; // Import useRouter
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../styles/Login.module.css';
+import { listConversations } from '../utils/utils';
 
 export default function Login() {
   // State variables for username and password
@@ -52,6 +53,15 @@ export default function Login() {
       localStorage.setItem('accessToken', result.access_token);
 			localStorage.setItem('refreshToken', result.refresh_token);
       localStorage.setItem('username', result.username);
+      try {
+        const convos = await listConversations(result.access_token);
+        if (convos.length > 0) {
+          // pick the most recent
+          localStorage.setItem('conversationId', convos[0].id);
+        }
+      } catch (e) {
+        console.error('Error preloading conversationId:', e);
+      }
 
       // Redirect to the chat page
       router.push('/');
