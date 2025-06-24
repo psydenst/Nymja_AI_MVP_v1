@@ -128,6 +128,10 @@
     font-weight: bold;
   }
 
+  .bannerContainer {
+  width: 50vw !important;
+}
+
   @media (max-width: 768px) {
   
     .page {
@@ -137,5 +141,9 @@
     .loginBox {
       width: 80%;
     }
+
+    .bannerContainer {
+    width: 90vw !important;
+  }
   }
   

@@ -1,4 +1,3 @@
-// components/Banner.tsx
 
 import React from 'react';
 import styles from '../styles/Login.module.css';
@@ -16,8 +15,10 @@ export default function Banner({ onContinue }: BannerProps) {
         left: '50%',
         transform: 'translate(-50%, -50%)',
         width: '50vw',
+        minWidth: '300px',
         /* Fallback to 50vh, but use 50dvh if available */
         height: '50vh',
+        minHeight: '500px',
         /* Prevent it from exceeding, say, 80% of the dynamic viewport */
         maxHeight: '80dvh',
         backgroundColor: 'rgba(0, 0, 0, 0.7)',

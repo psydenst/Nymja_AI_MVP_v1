@@ -47,6 +47,9 @@ export default function Home() {
   const [model, setModel] = useState<string>('deepseek');
   const [mode, setMode] = useState<Mode>('proxy');
   const [justCreatedConvId, setJustCreatedConvId] = useState<string|null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const [iconSrc, setIconSrc] = useState('/send1.png');
+  const [iconOpacity, setIconOpacity] = useState(1);
 
   // Initialize accessToken from localStorage
   const [accessToken, setAccessToken] = useState<string | null>(() => {
@@ -183,6 +186,40 @@ export default function Home() {
     setInputBarHeight(newHeight)
   }
 
+  // Handle image transition on send 
+// inside your component, after declaring iconSrc and iconOpacity:
+  const handleIconClick = () => {
+    // trigger fade‐out
+    setIconOpacity(0);
+
+    // capture current src so closure is correct
+    const currentlySendIcon = iconSrc === '/send1.png';
+    // decide what the next src should be
+    const nextSrc = currentlySendIcon ? '/icon_cancel.png' : '/send1.png';
+
+    setTimeout(() => {
+      // swap the icon
+      setIconSrc(nextSrc);
+      // trigger the appropriate action
+      if (currentlySendIcon) {
+        // we were on send → now start sending (and show cancel)
+        sendMessage();
+      } else {
+        // we were on cancel → abort (and show send)
+        cancelSend();
+      }
+      // fade back in
+      setIconOpacity(1);
+    }, 200); // match your CSS transition duration
+  };
+  
+  // Cancels sendMessage
+  const cancelSend = () => {
+    abortControllerRef.current?.abort();
+    // UI state reset happens in sendMessage’s finally block
+    setIsSending(false);
+  };
+
   const sendMessage = async () => {
     if (userMessage.trim() === '' || isSending) return;
     setIsSending(true);
@@ -198,6 +235,9 @@ export default function Home() {
       setIsSending(false);
       return;
     }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
       // 2️⃣ Send the user's message
@@ -252,7 +292,7 @@ export default function Home() {
 
     try {
       // 5️⃣ Call bot-response
-      const botData = await getBotResponse(userData.id, accessToken!, model);
+      const botData = await getBotResponse(userData.id, accessToken!, model, { signal: controller.signal });
 
       // 6️⃣ Replace placeholder with real bot text
       setConversations(prev =>
@@ -269,7 +309,7 @@ export default function Home() {
             : conv
         )
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error getting bot response:', err)
       // Update placeholder with error text
       setConversations(prev =>
@@ -682,23 +722,51 @@ export default function Home() {
                   currentMode={mode}
                   onModeChange={setMode}
                 />
-								<button
-									className="btn"
-									onClick={sendMessage}
-									disabled={isSending} // disables btn while sending
-									style={{
-										backgroundColor: 'transparent',
-										border: 'none',
-										outline: 'none',
-										padding: '0',
-									}}
-								>
-									<Image
-										src="/send1.png"
-										alt="Send"
-										style={{ width: '25px', height: '25px', filter: 'invert(100%)', }}
-									/>
-								</button>
+                <button
+                  className="btn"
+                  onClick={isSending ? cancelSend : sendMessage}
+                  disabled={!isSending && userMessage.trim() === ''}
+                  style={{
+                    position: 'relative',
+                    width: '27px',
+                    height: '25px',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                  }}
+                >
+                  {/* Send icon (shows when isSending===false) */}
+                  <Image
+                    src="/send1.png"
+                    alt="Send"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      filter: 'invert(100%)',
+                      transition: 'opacity 0.6s ease',
+                      opacity: isSending ? 0 : 1,
+                    }}
+                  />
+
+                  {/* Cancel icon (shows when isSending===true) */}
+                  <Image
+                    src="/icon_cancel.png"
+                    alt="Cancel"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      filter: 'invert(100%)',
+                      transition: 'opacity 0.6s ease',
+                      opacity: isSending ? 1 : 0,
+                    }}
+                  />
+                </button>
 							</div>
            </div>
           </div>

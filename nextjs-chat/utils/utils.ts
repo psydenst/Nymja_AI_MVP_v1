@@ -220,7 +220,8 @@ export function markMessageSender(message: any): 'user' | 'bot' {
 export async function getBotResponse(
   messageId: string,
   userToken: string | null,
-  modelKey : string = 'deepseek'
+  modelKey : string = 'deepseek',
+  options?: { signal?: AbortSignal }      // ← new 4th param
 ): Promise<any> {
   if (!userToken) {
     throw new Error("User token is missing");
@@ -239,6 +240,7 @@ export async function getBotResponse(
         body: JSON.stringify({
         model: modelKey,
         }),
+        signal: options?.signal,
       }
     );
 
@@ -250,7 +252,7 @@ export async function getBotResponse(
     const result = await response.json();
     // console.log("Fetched bot response:", result);
     return result; // Expected to include the bot's response text (e.g. result.text)
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching bot response:", error);
     throw error;
   }
