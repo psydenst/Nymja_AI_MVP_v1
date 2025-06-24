@@ -4,6 +4,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm    from 'remark-gfm';
 import remarkMath   from 'remark-math';
 import rehypeKatex  from 'rehype-katex';
+import { Copy } from 'lucide-react';
+import { motion } from 'framer-motion'
 import rehypeHighlight from 'rehype-highlight';
 import styles from '../styles/Home.module.css';
 import { useState, useRef, useEffect } from 'react';
@@ -50,7 +52,7 @@ export default function Home() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const [iconSrc, setIconSrc] = useState('/send1.png');
   const [iconOpacity, setIconOpacity] = useState(1);
-
+  const MotionCopy = motion(Copy)
   // Initialize accessToken from localStorage
   const [accessToken, setAccessToken] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
@@ -567,14 +569,16 @@ export default function Home() {
                                 borderRadius: '4px',
                               }}
                             >
-                              <ReactMarkdown
-                                remarkPlugins={[remarkGfm, remarkMath]}
-                                rehypePlugins={[rehypeKatex, rehypeHighlight]}
-                                components={{
-                                  code({ node, inline, className, children, ...props }: any) {
-                                    return inline ? (
-                                      <code 
-                                        className={className} 
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm, remarkMath]}
+                              rehypePlugins={[rehypeKatex, rehypeHighlight]}
+                              components={{
+                                code({ node, inline, className, children, ...props }: any) {
+                                  // inline code: just style it normally
+                                  if (inline) {
+                                    return (
+                                      <code
+                                        className={className}
                                         style={{
                                           backgroundColor: '#000',
                                           color: '#fff',
@@ -586,8 +590,51 @@ export default function Home() {
                                       >
                                         {children}
                                       </code>
-                                    ) : (
-                                      <pre 
+                                    );
+                                  }
+
+                                  // block code: add a copy button
+                                  const codeRef = useRef<HTMLElement>(null);
+                                  const copyToClipboard = () => {
+                                    if (codeRef.current) {
+                                      navigator.clipboard.writeText(codeRef.current.innerText);
+                                    }
+                                  };
+
+                                  return (
+                                    <div style={{ position: 'relative', margin: '8px 0' }}>
+                                      {/* Copy button */}
+                                      <button
+                                        onClick={copyToClipboard}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onTouchStart={(e) => e.preventDefault()}
+                                        style={{
+                                          position: 'absolute',
+                                          top: '8px',
+                                          right: '8px',
+                                          background: 'transparent',
+                                          border: 'none',
+                                          cursor: 'pointer',
+                                          padding: 0,
+                                          outline: 'none',
+                                          boxShadow: 'none',
+                                          WebkitTapHighlightColor: 'transparent',
+                                          /* make sure the element itself can't be selected/highlighted */
+                                          WebkitUserSelect: 'none',
+                                          userSelect: 'none',
+                                        }}
+                                        aria-label="Copy code"
+                                      >
+                                        <MotionCopy size={16} color="white" 
+                                          whileHover={{ scale: 1.2, opacity: 0.8 }}
+                                          whileTap={{ scale: 1.1 }}
+                                          transition={{ type: 'spring', stiffness: 300 }}
+                                        />
+                                      </button>
+
+                                      <pre
+                                        ref={codeRef}
+                                        className={className}
                                         style={{
                                           backgroundColor: '#000',
                                           color: '#fff',
@@ -595,59 +642,57 @@ export default function Home() {
                                           borderRadius: '4px',
                                           overflowX: 'auto',
                                           fontFamily: 'Menlo, Consolas, monospace',
-                                          margin: '8px 0',
                                         }}
                                         {...props}
                                       >
-                                        <code className={className}>{children}</code>
+                                        <code>{children}</code>
                                       </pre>
-                                    )
-                                  },
-                                  // Style math blocks
-                                  div({ className, children, ...props }: any) {
-                                    if (className?.includes('katex-display')) {
-                                      return (
-                                        <div
-                                          className={className}
-                                          style={{
-                                            backgroundColor: '#000',
-                                            color: '#fff',
-                                            padding: '1em',
-                                            borderRadius: '4px',
-                                            margin: '1em 0',
-                                          }}
-                                          {...props}
-                                        >
-                                          {children}
-                                        </div>
-                                      )
-                                    }
-                                    return <div className={className} {...props}>{children}</div>
-                                  },
-                                  // Style inline math
-                                  span({ className, children, ...props }: any) {
-                                    if (className?.includes('katex')) {
-                                      return (
-                                        <span
-                                          className={className}
-                                          style={{
-                                            backgroundColor: '#111',
-                                            color: '#fff',
-                                            padding: '0.1em 0.2em',
-                                            borderRadius: '3px',
-                                          }}
-                                          {...props}
-                                        >
-                                          {children}
-                                        </span>
-                                      )
-                                    }
-                                    return <span className={className} {...props}>{children}</span>
+                                    </div>
+                                  );
+                                },
+                                div({ className, children, ...props }: any) {
+                                  if (className?.includes('katex-display')) {
+                                    return (
+                                      <div
+                                        className={className}
+                                        style={{
+                                          backgroundColor: '#000',
+                                          color: '#fff',
+                                          padding: '1em',
+                                          borderRadius: '4px',
+                                          margin: '1em 0',
+                                        }}
+                                        {...props}
+                                      >
+                                        {children}
+                                      </div>
+                                    );
                                   }
-                                }}
-                              >
-                                {message.text}
-                              </ReactMarkdown>
+                                  return <div className={className} {...props}>{children}</div>;
+                                },
+                                span({ className, children, ...props }: any) {
+                                  if (className?.includes('katex')) {
+                                    return (
+                                      <span
+                                        className={className}
+                                        style={{
+                                          backgroundColor: '#111',
+                                          color: '#fff',
+                                          padding: '0.1em 0.2em',
+                                          borderRadius: '3px',
+                                        }}
+                                        {...props}
+                                      >
+                                        {children}
+                                      </span>
+                                    );
+                                  }
+                                  return <span className={className} {...props}>{children}</span>;
+                                }
+                              }}
+                            >
+                              {message.text}
+                            </ReactMarkdown>
                             </div>
                           )}
                         </div>
