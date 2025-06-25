@@ -47,6 +47,8 @@ export default function Home() {
 	const newlineCount = (userMessage.match(/\n/g) || []).length;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const chatRef = useRef(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(false);
   const [model, setModel] = useState<string>('deepseek');
   const [mode, setMode] = useState<Mode>('proxy');
   const [justCreatedConvId, setJustCreatedConvId] = useState<string|null>(null);
@@ -449,12 +451,7 @@ const sendMessage = async () => {
     // any other errors in sendMessage
     console.error('Error in sendMessage:', error);
     setIsSending(false);
-  } finally {
-    // Scroll to bottom after everything
-    setTimeout(() => {
-      lastMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 50);
-  }
+  } 
 };
 
 
