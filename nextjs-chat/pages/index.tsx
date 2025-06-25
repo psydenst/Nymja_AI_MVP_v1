@@ -108,6 +108,7 @@ export default function Home() {
 					const defaultConv = await createDefaultConversation(accessToken);
 					setConversations([defaultConv]);
 					localStorage.setItem('conversationId', defaultConv.id);
+          setJustCreatedConvId(defaultConv.id);
 				} else {
 					setConversations(data);
 					localStorage.setItem('conversations', JSON.stringify(data));
@@ -407,8 +408,14 @@ const sendMessage = async () => {
       setIsSending(false);
     }
 
+    const currentConv = conversations[currentConversationIndex];
+    const needsRename =
+      justCreatedConvId === conversationId ||
+      currentConv.name === "Conversation 1";
+
+
     // 6️⃣ Name the conversation if it was just created
-    if (justCreatedConvId === conversationId) {
+    if (needsRename) {
       try {
         const nameRes = await fetch(
           `/api/conversations/${conversationId}/name/`,
