@@ -20,4 +20,4 @@ COPY . /app/
 EXPOSE 8000
 
 # Define o script de inicialização
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["./backend/entrypoint.sh"]

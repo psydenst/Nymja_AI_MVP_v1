@@ -31,7 +31,7 @@ OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 SECRET_KEY = 'django-insecure-&a)z&5_pkttgv0wt6!-ymrsrfb99wac%$0u0$z1r5g1_@_1dil'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['ai.tupinymquim.com', 'localhost', '127.0.0.1', '85.239.55.77']
 
@@ -159,6 +159,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

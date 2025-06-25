@@ -1,4 +1,3 @@
-import json
 import http.client
 from django.conf import settings
 from .models import NymConversation, NymMessage
@@ -6,46 +5,63 @@ from rest_framework import status
 import os
 import requests
 import re
+from asgiref.sync import sync_to_async
+import httpx
+import json
 
-def getBotResponse(user_message, conversation_id, model_key="deepseek"):
-    """Modified to return a generator that yields text chunks as they arrive"""
-    # 1. Ensure we have an API key
+from asgiref.sync import sync_to_async
+import httpx
+import json
+from django.conf import settings
+from .models import NymMessage
+
+
+from asgiref.sync import sync_to_async
+import httpx
+import json
+from django.conf import settings
+from .models import NymMessage
+
+async def getBotResponse(user_message, conversation_id, model_key="deepseek"):
+    print("🧠 [getBotResponse] Entrou na função.")
+
+    # 1. Checa API KEY
     api_key = settings.OPENROUTER_API_KEY
     if not api_key:
+        print("❌ [getBotResponse] OPENROUTER_API_KEY não definida.")
         raise RuntimeError("OPENROUTER_API_KEY not set in settings")
+    print("✅ [getBotResponse] API KEY encontrada.")
 
-    # 2. Lookup the actual model ID in your MODEL_MAP
+    # 2. Resolve o model_id
     try:
         model_id = settings.MODEL_MAP[model_key]
+        print(f"✅ [getBotResponse] Modelo encontrado: {model_key} → {model_id}")
     except KeyError:
+        print(f"❌ [getBotResponse] Model key inválido: {model_key}")
         raise ValueError(f"Unknown model key: {model_key}")
 
-    # 3. Build the conversation history (last 30 msgs, chronological)
-    api_url = "https://openrouter.ai/api/v1/chat/completions"
-    messages_qs = (
-        NymMessage.objects
-        .filter(conversation=conversation_id)
-        .order_by('-created_at')[:30]
-    )
-    # reverse into chronological order
-    messages = list(messages_qs)[::-1]
+    # 3. Carrega histórico da conversa (ORM e decrypt_text async!)
+    try:
+        print("🔎 [getBotResponse] Buscando histórico de mensagens...")
+        messages_qs = await sync_to_async(list)(
+            NymMessage.objects.filter(conversation=conversation_id).order_by('-created_at')[:30]
+        )
+        print(f"✅ [getBotResponse] {len(messages_qs)} mensagens encontradas.")
+        messages = messages_qs[::-1]
+        chat_history = []
+        for msg in messages:
+            role = "assistant" if msg.sender == "bot" else "user"
+            # Aqui pode acessar banco/disco, use sync_to_async!
+            content = await sync_to_async(msg.decrypt_text)()
+            chat_history.append({"role": role, "content": content})
 
-    # 4. Convert to OpenAI-style messages
-    chat_history = []
-    for msg in messages:
-        role = "assistant" if msg.sender == "bot" else "user"
-        chat_history.append({
-            "role": role,
-            "content": msg.decrypt_text()
-        })
+        chat_history.append({"role": "user", "content": user_message})
+        print("✅ [getBotResponse] Histórico preparado.")
+    except Exception as e:
+        print("❌ [getBotResponse] Erro montando histórico:", e)
+        raise
 
-    # 5. Append the new user message
-    chat_history.append({
-        "role": "user",
-        "content": user_message
-    })
-
-    # 6. Call the OpenRouter API with streaming enabled
+    # 4. Prepara payload e headers
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -54,28 +70,42 @@ def getBotResponse(user_message, conversation_id, model_key="deepseek"):
         "model": model_id,
         "messages": chat_history,
         "temperature": 0.7,
-        "stream": True,  # Always stream
+        "stream": True,
     }
+    print("📦 [getBotResponse] Payload montado:", payload)
 
-    response = requests.post(api_url, headers=headers, json=payload, stream=True)
-    response.raise_for_status()
+    # 5. Chama a API OpenRouter com streaming
+    print("🌍 [getBotResponse] Enviando requisição para OpenRouter...")
+    try:
+        async with httpx.AsyncClient(timeout=None) as client:
+            async with client.stream("POST", "https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload) as response:
+                print("📨 [getBotResponse] Resposta recebida da OpenRouter:", response.status_code)
+                if response.status_code != 200:
+                    text = await response.aread()
+                    print("❌ [getBotResponse] Resposta inesperada:", text)
+                    raise RuntimeError(f"OpenRouter HTTP {response.status_code}: {text.decode()}")
+                async for line in response.aiter_lines():
+                    print("🔹 [getBotResponse] Linha recebida:", line)
+                    if line.startswith("data: "):
+                        data_str = line[6:]
+                        if data_str == "[DONE]":
+                            print("🏁 [getBotResponse] Streaming [DONE].")
+                            break
+                        try:
+                            data = json.loads(data_str)
+                            delta = data.get("choices", [{}])[0].get("delta", {})
+                            if "content" in delta:
+                                print("📤 [getBotResponse] Chunk gerado:", delta["content"])
+                                yield delta["content"]
+                        except json.JSONDecodeError:
+                            print("❌ [getBotResponse] JSON inválido:", data_str)
+                            continue
+    except Exception as e:
+        print("❌ [getBotResponse] Erro na chamada HTTPX/OpenRouter:", e)
+        import traceback
+        traceback.print_exc()
+        raise
 
-    # 7. Process streaming response and yield chunks
-    for line in response.iter_lines():
-        if line:
-            line = line.decode('utf-8')
-            if line.startswith('data: '):
-                data_str = line[6:]  # Remove 'data: ' prefix
-                if data_str == '[DONE]':
-                    break
-                try:
-                    data = json.loads(data_str)
-                    if 'choices' in data and len(data['choices']) > 0:
-                        delta = data['choices'][0].get('delta', {})
-                        if 'content' in delta:
-                            yield delta['content']
-                except json.JSONDecodeError:
-                    continue
 
 def getConversationName(conversation_id):
     """

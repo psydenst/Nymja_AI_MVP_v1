@@ -1,6 +1,7 @@
 # api/views.py
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework import status
 from .serializers import MessageSerializer, UserSerializer, ConversationSerializer, RegisterSerializer
 from .models import NymUser, NymConversation, NymMessage
@@ -16,6 +17,10 @@ from mnemonic import Mnemonic
 import hashlib
 from django.http import StreamingHttpResponse
 import json
+from asgiref.sync import async_to_sync, sync_to_async
+import functools
+print = functools.partial(print, flush=True)
+
 
 ########## ADMIN ROUTES ##########
 
@@ -392,73 +397,82 @@ def SaveMessage(request, conversation_id):
 		print_error(e, True)
 		return Response(status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def BotResponse(request, message_id):
-    """
-    POST /api/conversations/<uuid:message_id>/messages/response/
-    Body JSON:
-      {
-        "model": "<one of your MODEL_MAP keys>"
-      }
-    """
-    try:
-        # 1) Fetch original message (404 if not found)
-        orig = get_object_or_404(NymMessage, id=message_id)
+class BotResponseView(APIView):
+    permission_classes = [IsAuthenticated]
 
-        # 2) Decrypt its text
-        plaintext = orig.decrypt_text()
+    def post(self, request, message_id):
+        print(f"📥 Incoming POST for message_id: {message_id}")
+        return async_to_sync(self.handle_async)(request, message_id)
 
-        # 3) Pull the model key from the body (default to "deepseek")
-        model_key = request.data.get("model", "deepseek")
+    async def handle_async(self, request, message_id):
+        try:
+            print("🔍 Fetching message from DB...")
+            orig = await sync_to_async(get_object_or_404)(NymMessage, id=message_id)
+            print("✅ Message found.")
 
-        # 4) Build the streaming generator
-        def generate_stream():
-            bot_text_chunks = []
+            plaintext = orig.decrypt_text()
+            print("🔓 Message decrypted:", plaintext)
 
-            for chunk in getBotResponse(
-                plaintext,
-                orig.conversation.id,
-                model_key=model_key
-            ):
-                bot_text_chunks.append(chunk)
-                yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+            model_key = request.data.get("model", "deepseek")
+            print("🧠 Model key received:", model_key)
 
-            # Once the chunks are done, persist & send final event
-            complete_text = ''.join(bot_text_chunks)
-            payload = {
-                "sender": "bot",
-                "text": complete_text,
-                "conversation": orig.conversation.id,
-            }
-            serializer = MessageSerializer(data=payload)
-            if serializer.is_valid():
-                saved = serializer.save()
-                data = serializer.data
-                data["text"] = decryptMessage(saved.id)
-                yield f"data: {json.dumps({'complete': True, 'message': data}, default=str)}\n\n"
-            else:
-                yield f"data: {json.dumps({'error': 'Error saving message'})}\n\n"
+            orig_conversation_id = await sync_to_async(lambda o: o.conversation.id)(orig)
 
-        # 5) Return a raw StreamingHttpResponse with SSE headers
-        response = StreamingHttpResponse(
-            generate_stream(),
-            content_type='text/event-stream'
-        )
-        response['Cache-Control'] = 'no-cache'
-        response['Connection'] = 'keep-alive'
-        # <<< tell Nginx / proxies not to buffer these chunks >>>
-        response['X-Accel-Buffering'] = 'no'
-        return response
+            async def generate_stream():
+                try:
+                    print("🚀 Starting stream generator...")
+                    bot_text_chunks = []
 
-    except ValueError as e:
-        return Response(
-            {"detail": str(e)},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    except Exception as exc:
-        print("BotResponse error:", exc)
-        return Response(status=status.HTTP_417_EXPECTATION_FAILED)
+                    async for chunk in getBotResponse(plaintext, orig.conversation.id, model_key):
+                        print("📤 Chunk received:", chunk)
+                        bot_text_chunks.append(chunk)
+                        yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+
+                    complete_text = ''.join(bot_text_chunks)
+                    print("🧩 Full response assembled:", complete_text)
+
+                    payload = {
+                        "sender": "bot",
+                        "text": complete_text,
+                        "conversation": orig_conversation_id,
+                    }
+
+                    serializer = MessageSerializer(data=payload)
+                    is_valid = await sync_to_async(serializer.is_valid)()
+
+                    if is_valid:
+                        saved = await sync_to_async(serializer.save)()
+                        data = serializer.data
+                        data["text"] = await sync_to_async(decryptMessage)(saved.id)
+                        print("💾 Message saved.")
+                        yield f"data: {json.dumps({'complete': True, 'message': data}, default=str)}\n\n"
+                    else:
+                        print("⚠️ Serializer invalid:", serializer.errors)
+                        yield f"data: {json.dumps({'error': 'Error saving message'})}\n\n"
+
+                except Exception as inner_exc:
+                    print("❌ Exception inside stream:", inner_exc)
+                    yield f"data: {json.dumps({'error': 'Internal stream error'})}\n\n"
+
+            response = StreamingHttpResponse(
+                generate_stream(),
+                content_type='text/event-stream'
+            )
+            response['Cache-Control'] = 'no-cache'
+            response['Connection'] = 'keep-alive'
+            response['X-Accel-Buffering'] = 'no'
+
+            print("✅ Response streaming initiated.")
+            return response
+
+        except ValueError as e:
+            print("❗ ValueError:", e)
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            import traceback
+            print("BotResponse error:", exc)
+            traceback.print_exc()
+            return Response({"detail": str(exc)}, status=status.HTTP_417_EXPECTATION_FAILED)
 
 
 @api_view(['GET'])

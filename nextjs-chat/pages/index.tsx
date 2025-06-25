@@ -217,13 +217,14 @@ export default function Home() {
     }, 200); // match your CSS transition duration
   };
   
-  // Cancels sendMessage
-  const cancelSend = () => {
-    abortControllerRef.current?.abort();
-    // UI state reset happens in sendMessage’s finally block
-    setIsSending(false);
-  };
 
+const cancelSend = () => {
+  if (abortControllerRef.current) {
+    abortControllerRef.current.abort();
+    abortControllerRef.current = null;
+    setIsSending(false); // Opcional, se quiser liberar o botão imediatamente
+  }
+};
 
 const sendMessage = async () => {
   if (userMessage.trim() === '' || isSending) return;
@@ -376,7 +377,7 @@ const sendMessage = async () => {
                   : conv
               )
             );
-          });
+          }, controller.signal);
         },
       });
     } catch (err: any) {
@@ -772,7 +773,17 @@ const sendMessage = async () => {
                                     );
                                   }
                                   return <span className={className} {...props}>{children}</span>;
-                                }
+                                },
+                                em({ node, children, ...props }: any) {
+                                  return (
+                                    <em
+                                      {...props}
+                                      style={{ margin: '0 0.2em' }}
+                                    >
+                                      {children}
+                                    </em>
+                                  )
+                                },
                               }}
                             >
                               {message.text}

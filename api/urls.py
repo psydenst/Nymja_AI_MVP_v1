@@ -25,6 +25,6 @@ urlpatterns = [
     # Messages #
     path('conversations/<uuid:conversation_id>/messages/', views.GetConversationMessages, name='list_messages'),
     path('conversations/<uuid:conversation_id>/messages/send/', views.SaveMessage, name='send_message'),
-	path('conversations/<uuid:message_id>/messages/response/', views.BotResponse, name='bot_response'),
+	path('conversations/<uuid:message_id>/messages/response/', views.BotResponseView.as_view(), name='bot_response'),
 	path('messages/<uuid:message_id>/', views.CrudMessage, name='Crud_message'),
 ]

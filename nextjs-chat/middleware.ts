@@ -18,13 +18,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-      Protect everything under "/" EXCEPT:
-        - /login
-        - /api/*
-        - Next.js internals (_next/*, favicon.ico)
-    */
-    '/((?!_next/static|_next/image|favicon.ico|api|login).*)',
-  ],
+  matcher: ['/'],
 }

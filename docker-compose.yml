@@ -1,27 +1,36 @@
 services:
   backend:
     build:
-      context: .  # The directory where the Dockerfile of the backend is located
-      dockerfile: ./backend/Dockerfile  
+      context: .
+      dockerfile: ./backend/Dockerfile
     ports:
       - "8000:8000"
     volumes:
-      - .:/app  # Synchronizes the host directory with the container
+      - .:/app
     env_file:
       - .env
     environment:
       - DEBUG=True
-      - DATABASE_HOST=${POSTGRES_HOST} # Host of the DB defined for the "db" service
-      - DATABASE_PORT=${POSTGRES_PORT}  # PostgreSQL port for Django to connect
-      - DATABASE_NAME=${POSTGRES_DB}  # Database name
-      - DATABASE_USER=${POSTGRES_USER}  # Database user
-      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}  # Database password
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY} 
+      - DATABASE_HOST=${POSTGRES_HOST}
+      - DATABASE_PORT=${POSTGRES_PORT}
+      - DATABASE_NAME=${POSTGRES_DB}
+      - DATABASE_USER=${POSTGRES_USER}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
     depends_on:
       - db
     container_name: backend
     networks:
       - system
+
+    # adicione isto:
+    command: >
+      gunicorn backend.asgi:application
+      -k uvicorn.workers.UvicornWorker
+      -w 10
+      --worker-connections 100
+      --bind 0.0.0.0:8000
+      --timeout 120
 
   frontend:
     build:

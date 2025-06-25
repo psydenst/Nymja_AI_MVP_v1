@@ -234,7 +234,8 @@ export async function getBotResponse(
   messageId: string,
   userToken: string,
   modelKey: string = "deepseek",
-  handlers: StreamHandlers
+  handlers: StreamHandlers,
+  signal?: AbortSignal // cancelSend kill SSE
 ): Promise<void> {
   const url = `/api/conversations/${messageId}/messages/response/`;
 
@@ -247,8 +248,8 @@ export async function getBotResponse(
         Authorization: `Bearer ${userToken}`,
       },
       body: JSON.stringify({ model: modelKey }),
-      // include cookies if needed; remove credentials if not
       credentials: "include",
+      signal, // <- NOVO: passa para fetchEventSource!
       onopen: async (response) => {
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -280,13 +281,10 @@ export async function getBotResponse(
       },
       onerror(err) {
         if (handlers.onError) handlers.onError(err);
-        // by returning nothing, fetchEventSource will retry by default;
-        // throw to abort retries:
-        throw err;
+        throw err; // aborta as tentativas de retry
       },
     });
   } catch (err) {
-    // final fallback
     if (handlers.onError) handlers.onError(err);
   }
 }

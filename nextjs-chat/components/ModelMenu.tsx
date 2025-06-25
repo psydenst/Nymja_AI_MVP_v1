@@ -57,7 +57,13 @@ export default function ModelMenu({
               Proxy
             </button>
             <button
+              disabled
               className={currentMode === 'mixnet' ? styles.active : ''}
+                style={{
+                opacity: 0.5,
+                cursor: 'not-allowed',
+                pointerEvents: 'none',
+              }}
               onClick={() => onModeChange('mixnet')}
             >
               Mixnet
