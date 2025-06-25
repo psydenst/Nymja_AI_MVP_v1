@@ -58,15 +58,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def LogoutNymUser(request):
-    response = Response({"detail": "Logged out"}, status=status.HTTP_200_OK)
-    # Instruct the browser to delete the cookie
-    response.delete_cookie('accessToken', path='/')
-    return response
-
-
-@api_view(['POST'])
 @permission_classes([AllowAny])
 def LoginNymUser(request):
     if request.method == 'POST':
