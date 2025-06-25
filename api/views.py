@@ -14,6 +14,8 @@ from .utils import getBotResponse, ValidadeInputs, conversationExists, decryptMe
 from .permissions import isNymAdmin
 from mnemonic import Mnemonic
 import hashlib
+from django.http import StreamingHttpResponse
+import json
 
 ########## ADMIN ROUTES ##########
 
@@ -357,48 +359,54 @@ def BotResponse(request, message_id):
         # 3) Pull the model key from the body (default to "deepseek")
         model_key = request.data.get("model", "deepseek")
 
-        # 4) Get the bot response, validating the key
-        try:
-            bot_text = getBotResponse(
+        # 4) Build the streaming generator
+        def generate_stream():
+            bot_text_chunks = []
+
+            for chunk in getBotResponse(
                 plaintext,
                 orig.conversation.id,
                 model_key=model_key
-            )
-        except ValueError as e:
-            return Response(
-                {"detail": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            ):
+                bot_text_chunks.append(chunk)
+                yield f"data: {json.dumps({'chunk': chunk})}\n\n"
 
-        if not bot_text:
-            return Response(
-                {"detail": "Error getting bot response."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            # Once the chunks are done, persist & send final event
+            complete_text = ''.join(bot_text_chunks)
+            payload = {
+                "sender": "bot",
+                "text": complete_text,
+                "conversation": orig.conversation.id,
+            }
+            serializer = MessageSerializer(data=payload)
+            if serializer.is_valid():
+                saved = serializer.save()
+                data = serializer.data
+                data["text"] = decryptMessage(saved.id)
+                yield f"data: {json.dumps({'complete': True, 'message': data}, default=str)}\n\n"
+            else:
+                yield f"data: {json.dumps({'error': 'Error saving message'})}\n\n"
 
-        # 5) Persist the new bot message
-        payload = {
-            "sender":       "bot",
-            "text":         bot_text,
-            "conversation": orig.conversation.id,
-        }
-        serializer = MessageSerializer(data=payload)
-        if not serializer.is_valid():
-            return Response(
-                {"detail": "Error creating message.", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # 5) Return a raw StreamingHttpResponse with SSE headers
+        response = StreamingHttpResponse(
+            generate_stream(),
+            content_type='text/event-stream'
+        )
+        response['Cache-Control'] = 'no-cache'
+        response['Connection'] = 'keep-alive'
+        # <<< tell Nginx / proxies not to buffer these chunks >>>
+        response['X-Accel-Buffering'] = 'no'
+        return response
 
-        saved = serializer.save()
-
-        # 6) Return the created message (with decrypted text if needed)
-        data = serializer.data
-        data["text"] = decryptMessage(saved.id)
-        return Response(data, status=status.HTTP_201_CREATED)
-
+    except ValueError as e:
+        return Response(
+            {"detail": str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
     except Exception as exc:
-        print(exc)
+        print("BotResponse error:", exc)
         return Response(status=status.HTTP_417_EXPECTATION_FAILED)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

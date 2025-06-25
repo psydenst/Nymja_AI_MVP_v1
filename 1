@@ -1,6 +1,4 @@
 import * as jwtDecodeModule from 'jwt-decode';
-import { fetchEventSource } from "@microsoft/fetch-event-source";
-
 // Convert the module default export to unknown, then cast it as a callable function.
 const jwtDecode = (jwtDecodeModule.default as unknown) as (token: string) => any;
 
@@ -214,80 +212,96 @@ export function markMessageSender(message: any): 'user' | 'bot' {
   return message.sender ? message.sender : 'bot';
 }
 
-
-export interface StreamHandlers {
-  onThinking?: () => void;
-  onChunk: (chunk: string) => void;
-  onComplete: (message: {
-    id: string;
-    text: string;
-    created_at: string;
-    sender: string;
-  }) => void;
-  onError?: (err: any) => void;
-}
-
 /**
-* Streams the bot response via SSE using fetch-event-source.
-*/
+ * Calls the BotResponse endpoint for a given user message ID.
+ * Assumes the endpoint is: GET /api/conversations/<message_id>/messages/response/
+ */
+
 export async function getBotResponse(
   messageId: string,
-  userToken: string,
-  modelKey: string = "deepseek",
-  handlers: StreamHandlers
-): Promise<void> {
-  const url = `/api/conversations/${messageId}/messages/response/`;
+  userToken: string | null,
+  modelKey: string = 'deepseek',
+  options?: { 
+    signal?: AbortSignal,
+    onChunk?: (chunk: string) => void  // Callback for streaming chunks
+  }
+): Promise<any> {
+  if (!userToken) {
+    throw new Error("User token is missing");
+  }
 
   try {
-    await fetchEventSource(url, {
-      method: "POST",
-      headers: {
-        Accept: "text/event-stream, application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userToken}`,
-      },
-      body: JSON.stringify({ model: modelKey }),
-      // include cookies if needed; remove credentials if not
-      credentials: "include",
-      onopen: async (response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-      },
-      onmessage(event) {
-        if (!event.data) return;
+    const response = await fetch(
+      `/api/conversations/${messageId}/messages/response/`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          model: modelKey,
+        }),
+        signal: options?.signal,
+      }
+    );
 
-        let data: any;
-        try {
-          data = JSON.parse(event.data);
-        } catch {
-          console.warn("Non-JSON SSE data:", event.data);
-          return;
-        }
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Error fetching bot response");
+    }
 
-        if (data.status === "thinking" && handlers.onThinking) {
-          handlers.onThinking();
-        }
-        if (data.chunk) {
-          handlers.onChunk(data.chunk);
-        }
-        if (data.complete && data.message) {
-          handlers.onComplete(data.message);
-        }
-        if (data.error && handlers.onError) {
-          handlers.onError(data.error);
-        }
-      },
-      onerror(err) {
-        if (handlers.onError) handlers.onError(err);
-        // by returning nothing, fetchEventSource will retry by default;
-        // throw to abort retries:
-        throw err;
-      },
+    // Handle streaming response (always SSE now)
+    return new Promise((resolve, reject) => {
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      function processStream() {
+        reader?.read().then(({ done, value }) => {
+          if (done) {
+            return;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.slice(6); // Remove 'data: ' prefix
+              try {
+                const data = JSON.parse(dataStr);
+                
+                if (data.chunk && options?.onChunk) {
+                  options.onChunk(data.chunk);
+                }
+                
+                if (data.complete && data.message) {
+                  resolve(data.message);
+                  return;
+                }
+                
+                if (data.error) {
+                  reject(new Error(data.error));
+                  return;
+                }
+              } catch (e) {
+                console.warn('Failed to parse SSE data:', dataStr);
+              }
+            }
+          }
+
+          processStream(); // Continue reading
+        }).catch(reject);
+      }
+
+      processStream();
     });
-  } catch (err) {
-    // final fallback
-    if (handlers.onError) handlers.onError(err);
+  } catch (error: any) {
+    console.error("Error fetching bot response:", error);
+    throw error;
   }
 }
 

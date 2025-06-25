@@ -8,6 +8,7 @@ import requests
 import re
 
 def getBotResponse(user_message, conversation_id, model_key="deepseek"):
+    """Modified to return a generator that yields text chunks as they arrive"""
     # 1. Ensure we have an API key
     api_key = settings.OPENROUTER_API_KEY
     if not api_key:
@@ -34,34 +35,47 @@ def getBotResponse(user_message, conversation_id, model_key="deepseek"):
     for msg in messages:
         role = "assistant" if msg.sender == "bot" else "user"
         chat_history.append({
-            "role":    role,
+            "role": role,
             "content": msg.decrypt_text()
         })
 
     # 5. Append the new user message
     chat_history.append({
-        "role":    "user",
+        "role": "user",
         "content": user_message
     })
 
-    # 6. Call the OpenRouter API
+    # 6. Call the OpenRouter API with streaming enabled
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "Content-Type":  "application/json",
+        "Content-Type": "application/json",
     }
     payload = {
-        "model":       model_id,
-        "messages":    chat_history,
+        "model": model_id,
+        "messages": chat_history,
         "temperature": 0.7,
+        "stream": True,  # Always stream
     }
 
-    response = requests.post(api_url, headers=headers, json=payload)
-    # if not a 2xx, this raises requests.exceptions.HTTPError
+    response = requests.post(api_url, headers=headers, json=payload, stream=True)
     response.raise_for_status()
 
-    # 7. Extract and return the assistant’s reply
-    data = response.json()
-    return data["choices"][0]["message"]["content"]
+    # 7. Process streaming response and yield chunks
+    for line in response.iter_lines():
+        if line:
+            line = line.decode('utf-8')
+            if line.startswith('data: '):
+                data_str = line[6:]  # Remove 'data: ' prefix
+                if data_str == '[DONE]':
+                    break
+                try:
+                    data = json.loads(data_str)
+                    if 'choices' in data and len(data['choices']) > 0:
+                        delta = data['choices'][0].get('delta', {})
+                        if 'content' in delta:
+                            yield delta['content']
+                except json.JSONDecodeError:
+                    continue
 
 def getConversationName(conversation_id):
     """

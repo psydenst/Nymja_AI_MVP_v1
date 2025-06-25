@@ -14,6 +14,7 @@ import SearchList from '../components/SearchList';
 import { MODEL_OPTIONS } from '../constants/ModelOptions'
 import ModelMenu, { Mode } from '../components/ModelMenu';
 import Image from 'next/image';
+import { flushSync } from 'react-dom';
 import {
   listConversations,
   refreshAccessToken,
@@ -222,171 +223,232 @@ export default function Home() {
     setIsSending(false);
   };
 
-  const sendMessage = async () => {
-    if (userMessage.trim() === '' || isSending) return;
-    setIsSending(true);
 
-    // 1️⃣ Grab and clear the input
-    const messageToSend = userMessage;
-    setUserMessage('');
-    setInputBarHeight('6%');
+const sendMessage = async () => {
+  if (userMessage.trim() === '' || isSending) return;
+  setIsSending(true);
 
-    const conversationId = localStorage.getItem('conversationId');
-    if (!conversationId) {
-      console.error("No conversation id found. Make sure to create a conversation first.");
-      setIsSending(false);
-      return;
-    }
+  // 1️⃣ Grab and clear the input
+  const messageToSend = userMessage;
+  setUserMessage('');
+  setInputBarHeight('6%');
 
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
+  const conversationId = localStorage.getItem('conversationId');
+  if (!conversationId) {
+    console.error("No conversation id found. Make sure to create a conversation first.");
+    setIsSending(false);
+    return;
+  }
 
-    try {
-      // 2️⃣ Send the user's message
-      const userRes = await fetch(
-        `/api/conversations/${conversationId}/messages/send/`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ text: messageToSend }),
-          credentials: 'include',
-        }
-      );
-      if (!userRes.ok) {
-        const err = await userRes.json();
-        throw new Error(err.detail || 'Error sending message');
+  const controller = new AbortController();
+  abortControllerRef.current = controller;
+
+  try {
+    // 2️⃣ Send the user's message
+    const userRes = await fetch(
+      `/api/conversations/${conversationId}/messages/send/`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ text: messageToSend }),
+        credentials: 'include',
       }
-      const userData = await userRes.json();
+    );
+    if (!userRes.ok) {
+      const err = await userRes.json();
+      throw new Error(err.detail || 'Error sending message');
+    }
+    const userData = await userRes.json();
 
-      // 3️⃣ Add the user message to state
-      setConversations(prev =>
-        prev.map((conv, idx) =>
-          idx === currentConversationIndex
-            ? {
-                ...conv,
-                messages: [
-                  ...(conv.messages || []),
-                  { id: userData.id, text: messageToSend, sender: 'user' },
-                ],
-              }
-            : conv
-        )
-      );
+    // 3️⃣ Add the user message to state
+    setConversations(prev =>
+      prev.map((conv, idx) =>
+        idx === currentConversationIndex
+          ? {
+              ...conv,
+              messages: [
+                ...(conv.messages || []),
+                { id: userData.id, text: messageToSend, sender: 'user' },
+              ],
+            }
+          : conv
+      )
+    );
 
-      // 4️⃣ Insert a placeholder for bot response
-      const placeholderId = `pending_${Date.now()}`;
-      setConversations(prev =>
-        prev.map((conv, idx) =>
-          idx === currentConversationIndex
-            ? {
-                ...conv,
-                messages: [
-                  ...(conv.messages || []),
-                  { id: placeholderId, text: '...', sender: 'bot' },
-                ],
-              }
-            : conv
-        )
-      );
+    // 4️⃣ Insert a placeholder for bot response with animated dots
+    const placeholderId = `pending_${Date.now()}`;
+    setConversations(prev =>
+      prev.map((conv, idx) =>
+        idx === currentConversationIndex
+          ? {
+              ...conv,
+              messages: [
+                ...(conv.messages || []),
+                {
+                  id: placeholderId,
+                  text: '...',
+                  sender: 'bot',
+                  isTyping: true,
+                },
+              ],
+            }
+          : conv
+      )
+    );
 
+    // 5️⃣ Stream the bot response…
     try {
-      // 5️⃣ Call bot-response
-      const botData = await getBotResponse(userData.id, accessToken!, model, { signal: controller.signal });
-
-      // 6️⃣ Replace placeholder with real bot text
-      setConversations(prev =>
-        prev.map((conv, idx) =>
-          idx === currentConversationIndex
-            ? {
-                ...conv,
-                messages: conv.messages.map(msg =>
-                  msg.id === placeholderId
-                    ? { ...msg, text: botData.text }
-                    : msg
-                ),
-              }
-            : conv
-        )
-      );
+      await getBotResponse(userData.id!, accessToken!, model, {
+        onThinking: () => {
+          console.log("Bot is thinking…");
+          // keep showing “…” while thinking
+        },
+        onChunk: (chunk) => {
+          console.log("Received chunk:", chunk);
+          flushSync(() => {
+            setConversations(prev =>
+              prev.map((conv, idx) =>
+                idx === currentConversationIndex
+                  ? {
+                      ...conv,
+                      messages: conv.messages.map(msg => {
+                        if (msg.id === placeholderId) {
+                          if (msg.isTyping) {
+                            return { ...msg, text: chunk, isTyping: false };
+                          } else {
+                            return { ...msg, text: msg.text + chunk };
+                          }
+                        }
+                        return msg;
+                      }),
+                    }
+                  : conv
+              )
+            );
+          });
+        },
+        onComplete: (finalMessage) => {
+          console.log("Streaming completed:", finalMessage);
+          setConversations(prev =>
+            prev.map((conv, idx) =>
+              idx === currentConversationIndex
+                ? {
+                    ...conv,
+                    messages: conv.messages.map(msg =>
+                      msg.id === placeholderId
+                        ? {
+                            id: finalMessage.id,
+                            text: finalMessage.text,
+                            sender: 'bot',
+                            created_at: finalMessage.created_at,
+                            isTyping: false,
+                          }
+                        : msg
+                    ),
+                  }
+                : conv
+            )
+          );
+        },
+        onError: (err) => {
+          console.error("Stream error:", err);
+          flushSync(() => {
+            setConversations(prev =>
+              prev.map((conv, idx) =>
+                idx === currentConversationIndex
+                  ? {
+                      ...conv,
+                      messages: conv.messages.map(msg =>
+                        msg.id === placeholderId
+                          ? {
+                              ...msg,
+                              text: `Error: ${err.message || "bot response failed"}`,
+                              isError: true,
+                              isTyping: false,
+                            }
+                          : msg
+                      ),
+                    }
+                  : conv
+              )
+            );
+          });
+        },
+      });
     } catch (err: any) {
-      if (err.name === 'AbortError') {
-        // ⚠️ User clicked cancel — remove the “...” placeholder entirely
+      // catch any errors thrown by getBotResponse itself
+      console.error("Unexpected streaming failure:", err);
+      flushSync(() => {
         setConversations(prev =>
           prev.map((conv, idx) =>
             idx === currentConversationIndex
               ? {
                   ...conv,
-                  messages: conv.messages.filter(msg => msg.id !== placeholderId),
+                  messages: conv.messages.map(msg =>
+                    msg.id === placeholderId
+                      ? {
+                          ...msg,
+                          text: `Error: ${err.message || "unknown error"}`,
+                          isError: true,
+                          isTyping: false,
+                        }
+                      : msg
+                  ),
                 }
               : conv
           )
         );
-        // early return so we don’t run your general-error logic below
-        return;
-      }
-      console.error('Error getting bot response:', err)
-      // Update placeholder with error text
-      setConversations(prev =>
-        prev.map((conv, idx) =>
-          idx === currentConversationIndex
-            ? {
-                ...conv,
-                messages: conv.messages.map(msg =>
-                  msg.id === placeholderId
-                    ? 
-                    { ...msg, text: 'Error getting bot response.',
-                      isError: true,
-                    }
-                    : msg
-                ),
-              }
-            : conv
-        )
-      )
-    }
-      // 7️⃣ If we just created this conversation, name it
-      if (justCreatedConvId === conversationId) {
-        try {
-          const nameRes = await fetch(
-            `/api/conversations/${conversationId}/name/`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`,
-              },
-              body: JSON.stringify({}), // empty body is fine
-            }
-          );
-          if (nameRes.ok) {
-            const updated = await nameRes.json();
-            setConversations(prev =>
-              prev.map(c =>
-                c.id === conversationId ? { ...c, name: updated.name } : c
-              )
-            );
-          } else {
-            console.warn('NameConversation failed', await nameRes.text());
-          }
-        } catch (e) {
-          console.error('Error naming conversation', e);
-        } finally {
-          setJustCreatedConvId(null);
-        }
-      }
-    } catch (error) {
-      console.error('Error in sendMessage:', error);
+      });
     } finally {
+      // always reset the sending flag when streaming ends/errors
       setIsSending(false);
-      // scroll to bottom
-      setTimeout(() => {
-        lastMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 50);
     }
-  };
+
+    // 6️⃣ Name the conversation if it was just created
+    if (justCreatedConvId === conversationId) {
+      try {
+        const nameRes = await fetch(
+          `/api/conversations/${conversationId}/name/`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({}),
+          }
+        );
+        if (nameRes.ok) {
+          const updated = await nameRes.json();
+          setConversations(prev =>
+            prev.map(c =>
+              c.id === conversationId ? { ...c, name: updated.name } : c
+            )
+          );
+        } else {
+          console.warn('NameConversation failed', await nameRes.text());
+        }
+      } catch (e) {
+        console.error('Error naming conversation', e);
+      } finally {
+        setJustCreatedConvId(null);
+      }
+    }
+  } catch (error) {
+    // any other errors in sendMessage
+    console.error('Error in sendMessage:', error);
+    setIsSending(false);
+  } finally {
+    // Scroll to bottom after everything
+    setTimeout(() => {
+      lastMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
+  }
+};
+
 
   // Function to create New Conversation
   const startNewConversation = async () => {
@@ -754,17 +816,16 @@ export default function Home() {
 										onChange={handleInputChange}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
-                        // Detect touch‐first (mobile/tablet) vs mouse‐first (desktop)
-                        const isTouchDevice =
-                          typeof window !== 'undefined' &&
-                          window.matchMedia('(pointer: coarse)').matches;
+                        const isMobile = typeof navigator !== 'undefined' &&
+                          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+                          .test(navigator.userAgent);
 
-                        if (!isTouchDevice) {
-                          // Desktop: prevent newline and send immediately
+                        if (!isMobile) {
+                          // Desktop → intercept the Enter, send, no newline
                           e.preventDefault();
                           sendMessage();
                         }
-                        // Mobile: allow newline; require tapping the send button to submit
+                        // Mobile → do nothing (Enter will insert a newline)
                       }
                     }}
 										onFocus={() => setIsFocused(true)}
