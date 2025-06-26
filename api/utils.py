@@ -97,7 +97,6 @@ async def getBotResponse(user_message, conversation_id, model_key="gemma", messa
                             data = json.loads(data_str)
                             delta = data.get("choices", [{}])[0].get("delta", {})
                             if "content" in delta:
-                                print("📤 [getBotResponse] Chunk gerado:", delta["content"])
                                 yield delta["content"]
                         except json.JSONDecodeError:
                             print("❌ [getBotResponse] JSON inválido:", data_str)

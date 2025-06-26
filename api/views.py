@@ -424,12 +424,10 @@ class BotResponseView(APIView):
                     bot_text_chunks = []
 
                     async for chunk in getBotResponse(plaintext, orig.conversation.id, model_key, message_id):
-                        print("📤 Chunk received:", chunk)
                         bot_text_chunks.append(chunk)
                         yield f"data: {json.dumps({'chunk': chunk})}\n\n"
 
                     complete_text = ''.join(bot_text_chunks)
-                    print("🧩 Full response assembled:", complete_text)
 
                     payload = {
                         "sender": "bot",
