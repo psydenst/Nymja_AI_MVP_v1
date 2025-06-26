@@ -1,10 +1,9 @@
 ## About
 
-This is the second deliverable of the Nymja.ai MVP  project, which aims to create an app that concentrates open-source LLMs under a privacy-focused architecture.
+This is the second deliverable of the Nymja.ai project, a MVP funded by Nym which aims to create an app that concentrates open-source LLMs under a privacy-focused architecture.
 
-For testing the app: ai.tupinymquim.com
+Test the app [here](ai.tupinymquim.com) and go to the [forum](https://forum.nym.com/t/report-on-nymja-ai-2-trimester-2025/1419/1) for more info on architecture, development and features.
 
-For more details: https://forum.nym.com/t/report-on-nymja-ai-2-trimester-2025/1419/1
 
 ### License
 
