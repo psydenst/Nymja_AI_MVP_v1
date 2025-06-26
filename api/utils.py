@@ -8,21 +8,15 @@ import re
 from asgiref.sync import sync_to_async
 import httpx
 import json
-
 from asgiref.sync import sync_to_async
 import httpx
-import json
-from django.conf import settings
-from .models import NymMessage
+import threading
+
+CANCEL_FLAGS = {}
+CANCEL_FLAGS_LOCK = threading.Lock()
 
 
-from asgiref.sync import sync_to_async
-import httpx
-import json
-from django.conf import settings
-from .models import NymMessage
-
-async def getBotResponse(user_message, conversation_id, model_key="deepseek"):
+async def getBotResponse(user_message, conversation_id, model_key="gemma", message_id=None):
     print("🧠 [getBotResponse] Entrou na função.")
 
     # 1. Checa API KEY
@@ -79,13 +73,21 @@ async def getBotResponse(user_message, conversation_id, model_key="deepseek"):
     try:
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream("POST", "https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload) as response:
-                print("📨 [getBotResponse] Resposta recebida da OpenRouter:", response.status_code)
+                print("📬 [getBotResponse] Resposta recebida da OpenRouter:", response.status_code)
                 if response.status_code != 200:
                     text = await response.aread()
                     print("❌ [getBotResponse] Resposta inesperada:", text)
                     raise RuntimeError(f"OpenRouter HTTP {response.status_code}: {text.decode()}")
+
                 async for line in response.aiter_lines():
-                    print("🔹 [getBotResponse] Linha recebida:", line)
+                    # 🔽 Verifique o cancelamento a cada linha recebida!
+                    with CANCEL_FLAGS_LOCK:
+                        if message_id and CANCEL_FLAGS.get(str(message_id)):
+                            print("🛑 [getBotResponse] Cancelamento detectado, abortando stream!")
+                            del CANCEL_FLAGS[str(message_id)]
+                            return  # ou break
+
+                    print("🔷 [getBotResponse] Linha recebida:", line)
                     if line.startswith("data: "):
                         data_str = line[6:]
                         if data_str == "[DONE]":

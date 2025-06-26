@@ -101,7 +101,7 @@ const SearchList: React.FC<SearchListProps> = ({
     >
       {/* Search input */}
       <div
-        className={`${styles.search_sidebar} d-flex align-items-center justify-content-start opacity-100`}
+        className={`${styles.search_sidebar} d-flex align-items-center justify-content-start opacity-100 mt-3`}
       >
         <div className="d-flex flex-row justify-content-between align-items-center">
           <img

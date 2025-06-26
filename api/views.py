@@ -20,7 +20,7 @@ import json
 from asgiref.sync import async_to_sync, sync_to_async
 import functools
 print = functools.partial(print, flush=True)
-
+from .utils import CANCEL_FLAGS, CANCEL_FLAGS_LOCK
 
 ########## ADMIN ROUTES ##########
 
@@ -413,7 +413,7 @@ class BotResponseView(APIView):
             plaintext = orig.decrypt_text()
             print("🔓 Message decrypted:", plaintext)
 
-            model_key = request.data.get("model", "deepseek")
+            model_key = request.data.get("model", "gemma")
             print("🧠 Model key received:", model_key)
 
             orig_conversation_id = await sync_to_async(lambda o: o.conversation.id)(orig)
@@ -423,7 +423,7 @@ class BotResponseView(APIView):
                     print("🚀 Starting stream generator...")
                     bot_text_chunks = []
 
-                    async for chunk in getBotResponse(plaintext, orig.conversation.id, model_key):
+                    async for chunk in getBotResponse(plaintext, orig.conversation.id, model_key, message_id):
                         print("📤 Chunk received:", chunk)
                         bot_text_chunks.append(chunk)
                         yield f"data: {json.dumps({'chunk': chunk})}\n\n"
@@ -473,6 +473,31 @@ class BotResponseView(APIView):
             print("BotResponse error:", exc)
             traceback.print_exc()
             return Response({"detail": str(exc)}, status=status.HTTP_417_EXPECTATION_FAILED)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def cancel_stream(request, message_id):
+    # Seta o flag de cancelamento para o message_id
+    with CANCEL_FLAGS_LOCK:
+        CANCEL_FLAGS[message_id] = True
+    return Response({"cancelled": True})
+
+class LastBotMessageIdView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, conversation_id):
+        # Busca a última mensagem do bot na conversa (ordem decrescente)
+        last_bot_message = (
+            NymMessage.objects
+            .filter(conversation_id=conversation_id, sender='bot')
+            .order_by('-created_at')
+            .first()
+        )
+        if last_bot_message:
+            return Response({"id": last_bot_message.id})
+        else:
+            return Response({"id": None}, status=404)
 
 
 @api_view(['GET'])

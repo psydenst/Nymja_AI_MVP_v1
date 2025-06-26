@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
 from . import views
-
+from .views import LastBotMessageIdView
 urlpatterns = [
     # Auth #
     path('auth/mnemonic/', views.GenerateMnemonic, name='mnemonic'),
@@ -23,8 +23,10 @@ urlpatterns = [
     path('conversations/<uuid:conversation_id>/name/', views.NameConversation, name='name_conversation'),
     path('conversations/<uuid:conversation_id>/rename/', views.RenameConversation, name='rename_conversation'),
     # Messages #
+    path('conversations/<uuid:conversation_id>/messages/last_bot/', LastBotMessageIdView.as_view()),
     path('conversations/<uuid:conversation_id>/messages/', views.GetConversationMessages, name='list_messages'),
     path('conversations/<uuid:conversation_id>/messages/send/', views.SaveMessage, name='send_message'),
 	path('conversations/<uuid:message_id>/messages/response/', views.BotResponseView.as_view(), name='bot_response'),
+    path('conversations/<uuid:message_id>/messages/cancel/', views.cancel_stream, name='cancel_stream'),
 	path('messages/<uuid:message_id>/', views.CrudMessage, name='Crud_message'),
 ]

@@ -49,12 +49,14 @@ export default function Home() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatRef = useRef(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(false);
-  const [model, setModel] = useState<string>('deepseek');
+  const [model, setModel] = useState<string>('gemma');
   const [mode, setMode] = useState<Mode>('proxy');
   const [justCreatedConvId, setJustCreatedConvId] = useState<string|null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [iconSrc, setIconSrc] = useState('/send1.png');
   const [iconOpacity, setIconOpacity] = useState(1);
+  const [isHovered, setIsHovered] = useState(false);
+  const [currentBotMessageId, setCurrentBotMessageId] = useState<string | null>(null);
   const MotionCopy = motion(Copy)
   // Initialize accessToken from localStorage
   const [accessToken, setAccessToken] = useState<string | null>(() => {
@@ -220,11 +222,45 @@ export default function Home() {
   };
   
 
-const cancelSend = () => {
+const cancelSend = async () => {
   if (abortControllerRef.current) {
     abortControllerRef.current.abort();
     abortControllerRef.current = null;
-    setIsSending(false); // Opcional, se quiser liberar o botão imediatamente
+    setIsSending(false);
+
+    const conversationId = localStorage.getItem('conversationId');
+
+    // Se não tem currentBotMessageId, busca na API o último message_id do bot!
+    let messageIdToCancel = currentBotMessageId;
+    if (!messageIdToCancel && conversationId) {
+      try {
+        const res = await fetch(`/api/conversations/${conversationId}/messages/last_bot/`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+        });
+        const data = await res.json();
+        messageIdToCancel = data.id;
+      } catch (e) {
+        console.warn("Erro buscando last_bot_message_id:", e);
+      }
+    }
+
+    // Agora manda o cancelamento pro backend, se tiver ID!
+    if (messageIdToCancel && conversationId) {
+      await fetch(`/api/conversations/${conversationId}/messages/cancel/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message_id: messageIdToCancel }),
+      });
+    }
+
+    setCurrentBotMessageId(null);
   }
 };
 
@@ -266,7 +302,7 @@ const sendMessage = async () => {
       throw new Error(err.detail || 'Error sending message');
     }
     const userData = await userRes.json();
-
+    setCurrentBotMessageId(userData.id);
     // 3️⃣ Add the user message to state
     setConversations(prev =>
       prev.map((conv, idx) =>
@@ -302,6 +338,7 @@ const sendMessage = async () => {
           : conv
       )
     );
+    setIsSending(true);
 
     // 5️⃣ Stream the bot response…
     try {
@@ -536,6 +573,7 @@ const sendMessage = async () => {
 					src="/logout_nymja_ai.png"
 					alt="Logout"
 					className={styles.arrow}
+          style={{minHeight: '25px'}}
 				/>
 			</div>
 
@@ -576,6 +614,14 @@ const sendMessage = async () => {
             <div className={styles.cover_container}>
               <button
                 onClick={startNewConversation}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                style={{
+                  transform: isHovered ? 'scale(1.3)' : 'scale(1.0)',
+                  transition: 'transform 0.3s',
+                  background: 'transparent',
+                  
+                }}
                 className={styles.addButton}
               >
                 <img
@@ -873,8 +919,8 @@ const sendMessage = async () => {
                   disabled={!isSending && userMessage.trim() === ''}
                   style={{
                     position: 'relative',
-                    width: '27px',
                     height: '25px',
+                    width: '30px',
                     background: 'transparent',
                     border: 'none',
                     padding: 0,
@@ -888,8 +934,8 @@ const sendMessage = async () => {
                       position: 'absolute',
                       top: 0,
                       left: 0,
-                      width: '100%',
-                      height: '100%',
+                      height: '25px',
+                      width: 'auto',
                       filter: 'invert(100%)',
                       transition: 'opacity 0.6s ease',
                       opacity: isSending ? 0 : 1,
@@ -904,8 +950,8 @@ const sendMessage = async () => {
                       position: 'absolute',
                       top: 0,
                       left: 0,
-                      width: '100%',
-                      height: '100%',
+                      height: 'auto',
+                      width: '30px',
                       filter: 'invert(100%)',
                       transition: 'opacity 0.6s ease',
                       opacity: isSending ? 1 : 0,

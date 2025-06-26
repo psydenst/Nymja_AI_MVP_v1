@@ -233,7 +233,7 @@ export interface StreamHandlers {
 export async function getBotResponse(
   messageId: string,
   userToken: string,
-  modelKey: string = "deepseek",
+  modelKey: string = "gemma",
   handlers: StreamHandlers,
   signal?: AbortSignal // cancelSend kill SSE
 ): Promise<void> {
