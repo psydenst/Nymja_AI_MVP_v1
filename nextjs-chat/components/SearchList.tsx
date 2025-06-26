@@ -169,7 +169,7 @@ const SearchList: React.FC<SearchListProps> = ({
       </div>
 
       {/* ── Mobile‐only Logout Icon, same as index.tsx ───────────────────────── */}
-      <div className={`d-block d-md-none mt-3`}>
+      <div className={`d-block d-md-none`}>
         <div
           className={styles.accordion_mobile}
           onClick={handleLogout}

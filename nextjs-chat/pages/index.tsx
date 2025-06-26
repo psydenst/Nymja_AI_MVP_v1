@@ -56,6 +56,9 @@ export default function Home() {
   const [iconSrc, setIconSrc] = useState('/send1.png');
   const [iconOpacity, setIconOpacity] = useState(1);
   const [isHovered, setIsHovered] = useState(false);
+  const isMobile = typeof window !== "undefined" && (
+    /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent)
+  );
   const [currentBotMessageId, setCurrentBotMessageId] = useState<string | null>(null);
   const MotionCopy = motion(Copy)
   // Initialize accessToken from localStorage
@@ -614,13 +617,14 @@ const sendMessage = async () => {
             <div className={styles.cover_container}>
               <button
                 onClick={startNewConversation}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
+                {...(!isMobile && {
+                  onMouseEnter: () => setIsHovered(true),
+                  onMouseLeave: () => setIsHovered(false)
+                })}
                 style={{
                   transform: isHovered ? 'scale(1.3)' : 'scale(1.0)',
                   transition: 'transform 0.3s',
                   background: 'transparent',
-                  
                 }}
                 className={styles.addButton}
               >
