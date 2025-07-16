@@ -4,7 +4,6 @@ from . import views
 from .views import LastBotMessageIdView
 urlpatterns = [
     # Auth #
-    path('auth/mnemonic/', views.GenerateMnemonic, name='mnemonic'),
     path('auth/register/', views.CompleteRegister, name='register'),
     path('auth/login/', views.LoginNymUser, name='login'),
     path('auth/logout/', views.LogoutNymUser, name='logout'),

@@ -21,6 +21,8 @@ from asgiref.sync import async_to_sync, sync_to_async
 import functools
 print = functools.partial(print, flush=True)
 from .utils import CANCEL_FLAGS, CANCEL_FLAGS_LOCK
+from .utils import derive_key_from_mnemonic
+
 
 ########## ADMIN ROUTES ##########
 
@@ -136,48 +138,25 @@ def LoginNymUser(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def GenerateMnemonic(request):
-    """
-    Step 1: No DB write yet. Generate a fresh 24-word BIP-39 phrase
-    and return it as JSON. The client must display this phrase once
-    (and store it securely) before calling the second step.
-    Response: { "mnemonic_phrase": "abandon abandon …" }
-    """
-    try:
-        mnemo = Mnemonic("english")
-        phrase = mnemo.generate(strength=256)  # 24 words (256 bits of entropy)
-        return Response({"mnemonic_phrase": phrase}, status=status.HTTP_200_OK)
-    except Exception as e:
-        # Log the exception if you want:
-        print_error(e, True)
-        return Response(
-            {"detail": "Could not generate mnemonic at this time."},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def CompleteRegister(request):
     """
-    Step 2: Client posts { username, password, mnemonic_phrase }.
-    We call NymUser.objects.create_user(...), which will:
-      - SHA256( mnemonic_phrase ) → mnemonic_hash
-      - set_password(password)
-      - save(username, mnemonic_hash, password)
-    Return the serialized user (id & username & created_at).
+    Step 2: Client posts { username, password, mnemonic_hash }.
+    We:
+      1) derive a key from the mnemonic (SHA256 of BIP-39 seed)
+      2) check uniqueness of that derived hash
+      3) create the user storing only mnemonic_hash and password
     """
     data = request.data
     username = data.get("username")
     password = data.get("password")
-    mnemonic_phrase = data.get("mnemonic_phrase")
+    mnemonic_hash = data.get("mnemonic_hash")
 
-    # 1) Basic presence check:
-    if not username or not password or not mnemonic_phrase:
+    # 1) Basic presence check
+    if not username or not password or not mnemonic_hash:
         return Response(
-            {"detail": "username, password and mnemonic_phrase are all required."},
+            {"detail": "username, password and mnemonic_hash are all required."},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -188,23 +167,21 @@ def CompleteRegister(request):
             status=status.HTTP_409_CONFLICT
         )
 
-    # 3) Compute SHA256 of provided phrase and check uniqueness of mnemonic_hash
-    hashed = hashlib.sha256(mnemonic_phrase.encode("utf-8")).hexdigest()
-    if NymUser.objects.filter(mnemonic_hash=hashed).exists():
+    # 3) Check uniqueness of hash
+    if NymUser.objects.filter(mnemonic_hash=mnemonic_hash).exists():
         return Response(
-            {"mnemonic_phrase": ["This mnemonic_phrase has already been used."]},
+            {"mnemonic_hash": ["This mnemonic_hash has already been used."]},
             status=status.HTTP_409_CONFLICT
         )
 
+    # 4) Create the new user, storing only the derived hash
     try:
-        # 4) Create the new user via your manager
         user = NymUser.objects.create_user(
             username=username,
             password=password,
-            mnemonic_phrase=mnemonic_phrase
+            mnemonic_hash=mnemonic_hash
         )
-    except Exception as exc:
-        # If your manager raises ValueError, capture it here to send back as 400.
+    except ValueError as exc:
         return Response(
             {"detail": str(exc)},
             status=status.HTTP_400_BAD_REQUEST
@@ -214,38 +191,34 @@ def CompleteRegister(request):
     serialized = UserSerializer(user)
     return Response(serialized.data, status=status.HTTP_201_CREATED)
 
-# api/views.py
-
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def ChangeCredentials(request):
     """
-    POST { mnemonic_phrase, username, new_password }
-    Finds the user by mnemonic_hash, then:
-      - If username differs, ensures it's unique and updates it
-      - If new_password differs from old, updates it
-    Returns the updated user (id, username, etc).
+    POST { mnemonic_hash, username, new_password }
+    We:
+      1) derive the same hash from the mnemonic
+      2) lookup the user by mnemonic_hash
+      3) update username and/or password as needed
     """
     data = request.data
-    mnemonic = data.get('mnemonic_phrase')
-    new_username = data.get('username')
-    new_password = data.get('new_password')
+    mnemonic_hash = data.get('mnemonic_hash')
+    new_username    = data.get('username')
+    new_password    = data.get('new_password')
 
     # 1) Basic presence check
-    if not (mnemonic and new_username and new_password):
+    if not (mnemonic_hash and new_username and new_password):
         return Response(
-            {"detail": "mnemonic_phrase, username and new_password are required."},
+            {"detail": "mnemonic_hash, username and new_password are required."},
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # 2) Lookup by mnemonic_hash
-    hashed = hashlib.sha256(mnemonic.encode('utf-8')).hexdigest()
+    # 2) Derive the hash and lookup user
     try:
-        user = NymUser.objects.get(mnemonic_hash=hashed)
+        user = NymUser.objects.get(mnemonic_hash=mnemonic_hash)
     except NymUser.DoesNotExist:
         return Response(
-            {"detail": "Invalid mnemonic_phrase."},
+            {"detail": "Invalid mnemonic_hash."},
             status=status.HTTP_404_NOT_FOUND
         )
 
@@ -266,7 +239,6 @@ def ChangeCredentials(request):
     user.save()
     serialized = UserSerializer(user)
     return Response(serialized.data, status=status.HTTP_200_OK)
-
 
 ########## CONVERSATION ROUTES ##########
 

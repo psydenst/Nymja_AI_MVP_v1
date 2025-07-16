@@ -11,6 +11,8 @@ import json
 from asgiref.sync import sync_to_async
 import httpx
 import threading
+from mnemonic import Mnemonic
+import hashlib
 
 CANCEL_FLAGS = {}
 CANCEL_FLAGS_LOCK = threading.Lock()
@@ -203,3 +205,14 @@ def decryptMessage(id):
 	if not message:
 		return None
 	return message.decrypt_text()
+
+def derive_key_from_mnemonic(mnemonic_phrase: str, passphrase: str = "") -> str:
+    """
+    Derive a fixed-length key from a BIP-39 mnemonic:
+      1) convert mnemonic → seed (bytes)
+      2) sha256(seed) → hex digest
+    Returns the hex-encoded SHA256 of the seed.
+    """
+    mnemo = Mnemonic("english")
+    seed = mnemo.to_seed(mnemonic_phrase, passphrase)
+    return hashlib.sha256(seed).hexdigest()

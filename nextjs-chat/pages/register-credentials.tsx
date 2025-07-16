@@ -5,17 +5,28 @@ import Head from 'next/head';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../styles/Login.module.css';
 import { useRouter } from 'next/router';
+import { useMnemonic } from '../contexts/MnemonicContext';
 
 export default function RegisterStep2() {
   const router = useRouter();
-  const { mnemonic } = router.query as { mnemonic?: string };
+  const { mnemonic } = useMnemonic();
 
-  // If mnemonic is missing (e.g. user navigated directly), redirect back to Step 1
-/*  useEffect(() => {
+  // helper: SHA-256 → hex
+  async function hashPhrase(phrase: string): Promise<string> {
+    const msg = new TextEncoder().encode(phrase);
+    const buf = await crypto.subtle.digest('SHA-256', msg);
+    return Array.from(new Uint8Array(buf))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  //If mnemonic is missing (e.g. user navigated directly), redirect back to Step 1
+   
+  useEffect(() => {
     if (!mnemonic) {
       router.replace('/register');
     }
-  }, [mnemonic, router]); */
+  }, [mnemonic, router]);
 
   // State for username / password / confirm password
   const [username, setUsername] = useState<string>('');
@@ -60,13 +71,14 @@ export default function RegisterStep2() {
     }
 
     try {
+      const mnemonic_hash = await hashPhrase(mnemonic);
       const response = await fetch('/api/auth/register/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username,
           password,
-          mnemonic_phrase: mnemonic,
+          mnemonic_hash,
         }),
       });
 

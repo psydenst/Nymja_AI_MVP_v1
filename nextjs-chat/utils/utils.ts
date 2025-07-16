@@ -1,5 +1,6 @@
 import * as jwtDecodeModule from 'jwt-decode';
 import { fetchEventSource } from "@microsoft/fetch-event-source";
+import { generateMnemonic } from 'bip39';
 
 // Convert the module default export to unknown, then cast it as a callable function.
 const jwtDecode = (jwtDecodeModule.default as unknown) as (token: string) => any;
@@ -19,6 +20,12 @@ export interface BotMessage {
   text: string
   conversation: string
   // …any other fields your serializer returns…
+}
+
+export function createMnemonic(): string {
+  // Use 256 bits of strength for maximum security
+  const phrase = generateMnemonic(256);
+  return phrase;
 }
 
 

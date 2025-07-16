@@ -6,6 +6,15 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../styles/Login.module.css';
 import { useRouter } from 'next/router';
 
+// ─── helper to SHA-256 hash the mnemonic in-browser ──────────────────────
+async function hashPhrase(phrase: string): Promise<string> {
+  const msg = new TextEncoder().encode(phrase);
+  const buf = await crypto.subtle.digest('SHA-256', msg);
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 export default function ChangeCredentials() {
   const router = useRouter();
 
@@ -19,6 +28,7 @@ export default function ChangeCredentials() {
   const [passwordError, setPasswordError] = useState<string>('');
   const [submitError, setSubmitError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
+
 
   // Ensure passwords match & length ≥8
   useEffect(() => {
@@ -44,11 +54,12 @@ export default function ChangeCredentials() {
     }
 
     try {
-      const res = await fetch('/api/auth/change-credentials/', {
+        const mnemonic_hash = await hashPhrase(mnemonic);
+        const res = await fetch('/api/auth/change-credentials/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          mnemonic_phrase: mnemonic,
+          mnemonic_hash,
           username,
           new_password: password,
         }),

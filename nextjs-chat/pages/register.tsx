@@ -6,37 +6,37 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from '../styles/Login.module.css';
 import { useRouter } from 'next/router';
 import Banner from '../components/Banner';
+import { createMnemonic } from '../utils/utils'
+import { useMnemonic } from '../contexts/MnemonicContext';
 
-// Note: drop Banner2—no longer needed
 
 export default function RegisterStep1() {
+
+  // ─── Context ──────────────────────────────────────────────────────────────
+
+  const { setMnemonic: storeMnemonic } = useMnemonic();
+
   // ─── State ──────────────────────────────────────────────────────────────
   const [showBanner, setShowBanner] = useState<boolean>(true);
   const [mnemonic, setMnemonic] = useState<string>('');
   const [mnemonicError, setMnemonicError] = useState<string>('');
   const [hasSaved, setHasSaved] = useState<boolean>(false);
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
-
   const router = useRouter();
 
   // ─── Fetch a new mnemonic phrase ────────────────────────────────────────
   const handleGenerate = async () => {
     setMnemonicError('');
     try {
-      const res = await fetch('/api/auth/mnemonic', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setMnemonic(data.mnemonic_phrase || data.mnemonic || '');
-        setHasSaved(false);
-      } else {
-        const err = await res.json();
-        setMnemonicError(err.detail || 'Failed to generate mnemonic');
-      }
-    } catch {
-      setMnemonicError('Network error while generating mnemonic');
+      // 1) generate locally
+      const phrase = createMnemonic();
+      // 2) set state
+      setMnemonic(phrase);
+      setHasSaved(false);
+      storeMnemonic(phrase);
+    } catch (e) {
+      console.error('mnemonic generation error', e);
+      setMnemonicError('Failed to generate mnemonic');
     }
   };
 
@@ -58,10 +58,7 @@ export default function RegisterStep1() {
   // ─── Navigate to credentials step ────────────────────────────────────────
   const handleContinueToCredentials = () => {
     if (!mnemonic) return;
-    router.push({
-      pathname: '/register-credentials',
-      query: { mnemonic },
-    });
+    router.push('/register-credentials');
   };
 
   // ─── Dismiss the initial overlay banner ─────────────────────────────────
